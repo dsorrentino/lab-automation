@@ -1,22 +1,25 @@
 Role Name
 =========
 
-A brief description of the role goes here.
+nameserver-role: A simple role to use dnsmasq as a nameserver
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+This role assumes FirewallD is installed and running.
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+dns_server_config:
+  settings: Contains a list of name/value pairs which will be configured in the dnsmasq.conf file
+  static_entries: Contains a list of name/ip pairs to configure /etc/hosts with
+  wildcard_entries: Contains a list of domain/ip pairs to configure as wildcard entries
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+ansible.posix
 
 Example Playbook
 ----------------
@@ -24,15 +27,30 @@ Example Playbook
 Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
 
     - hosts: servers
+      vars:
+        ntp_allowed_network: 192.168.0.0/24
+        dns_server_config:
+          settings:
+            - { name: "domain", value: "example.com" }
+            - { name: "interface", value: "eth0" }
+            - { name: "listen-address", value: "::1,127.0.0.1,192.168.0.254" }
+          static_entries:
+            - { name: server50.example.com, ip: 192.168.0.50 }
+            - { name: server51.example.com, ip: 192.168.0.51 }
+            - { name: api.ocp.example.com, ip: 192.168.0.9 }
+            - { name: openshift-master-0.ocp.example.com, ip: 192.168.0.20 }
+            - { name: openshift-master-1.ocp.example.com, ip: 192.168.0.21 }
+            - { name: openshift-master-2.ocp.example.com, ip: 192.168.0.22 }
+            - { name: openshift-worker-0.ocp.example.com, ip: 192.168.0.30 }
+            - { name: openshift-worker-1.ocp.example.com, ip: 192.168.0.31 }
+            - { name: openshift-worker-2.ocp.example.com, ip: 192.168.0.32 }
+          wildcard_entries:
+            - { domain: apps.ocp.example.com, ip: 192.168.0.10 }
       roles:
-         - { role: username.rolename, x: 42 }
+         - nameserver-role
 
 License
 -------
 
 BSD
 
-Author Information
-------------------
-
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
