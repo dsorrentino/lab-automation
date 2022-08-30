@@ -1,38 +1,36 @@
 Role Name
 =========
 
-A brief description of the role goes here.
+ocp-provisioner-role: Configures a system to act as the provisioner for an IPI OCP Installation
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+This role expects the target system is registered and has appropriate repositories configured. Additionally, it is expected that FirewallD is installed and running.
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+This role will create the user 'kni' on the target system.
 
-Dependencies
-------------
-
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+kni_user_password: Password to use for the kni user
+kni_use_provisioning_network: (boolean) if a provisioning network should be configured
+kni_baremetal_interface: The non-bridged, default configured interface which the baremetal bridge will be built on
+kni_provisioning_interface: The non-bridged, default configured interface which the provisioning bridge will be built on
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
-
-    - hosts: servers
+    - hosts: provisioner
+      vars:
+        kni_baremetal_interface: eth0
+      vars_files:
+        - vault/kni_password.yml
       roles:
-         - { role: username.rolename, x: 42 }
+        - ocp-provisioner-role
 
 License
 -------
 
 BSD
 
-Author Information
-------------------
-
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).

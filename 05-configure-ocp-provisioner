@@ -1,0 +1,8 @@
+- hosts: provisioner
+  vars:
+    kni_baremetal_interface: eth0
+  vars_files:
+    - vault/kni_password.yml
+  roles:
+    - linux-server-role
+    - ocp-provisioner-role
