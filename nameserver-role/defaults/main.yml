@@ -1,0 +1,13 @@
+---
+# defaults file for nameserver-role
+dns_server_config:
+  settings:
+    - { name: "domain", value: "example.com" }
+    - { name: "listen-interface", value: "eth0" }
+    - { name: "listen-address", value: "::1,127.0.0.1" }
+  domain: example.com
+  static_entries:
+    - { name: server1.example.com, ip: 192.168.0.5 }
+  wildcard_entries:
+    - { domain: apps.example.com, ip: 192.168.0.250 }
+

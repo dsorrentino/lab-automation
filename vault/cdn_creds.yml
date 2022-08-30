@@ -1,0 +1,4 @@
+# Configure this with CDN credentials and lock down with ansible-vault
+cdn_user: CDN_USER
+cdn_password: CDN_PASSWORD
+cdn_pool: 0000000000000000

@@ -1,0 +1,68 @@
+---
+# tasks file for kvm-role
+- name: Install necessary packages
+  yum:
+    name:
+      - libvirt
+      - qemu-kvm
+      - virt-manager
+      - virt-install
+      - libguestfs-tools
+      - libguestfs-xfs
+- name: Start and enable libvirtd
+  service:
+    name: libvirtd
+    state: started
+    enabled: true
+- name: Identify CPU vendor
+  shell: |
+    cat /proc/cpuinfo  | grep ^vendor_id | sort -u | awk '{print $NF}'
+  register: cpu_vendor
+- name: Configure KVM Options (Intel)
+  lineinfile:
+    path: /etc/modprobe.d/kvm.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: '^options kvm-intel nested=1', line: 'options kvm-intel nested=1' }
+    - { regexp: '^options kvm-intel enable_shadow_vmcs=1', line: 'options kvm-intel enable_shadow_vmcs=1' }
+    - { regexp: '^options kvm-intel enable_apicv=1', line: 'options kvm-intel enable_apicv=1' }
+    - { regexp: '^options kvm-intel ept=1', line: 'options kvm-intel ept=1' }
+  when: cpu_vendor.stdout == "GenuineIntel"
+- name: Modprobe (Intel)
+  shell: |
+    modprobe kvm && modprobe kvm_intel && modprobe br_netfilter
+  when: cpu_vendor.stdout == "GenuineIntel"
+- name: Configure KVM Options (AMD)
+  lineinfile:
+    path: /etc/modprobe.d/kvm.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: '^options kvm-amd nested=1', line: 'options kvm-amd nested=1' }
+  when: cpu_vendor.stdout == "AuthenticAMD"
+- name: Modprobe (AMD)
+  shell: |
+    modprobe kvm && modprobe kvm_amd && modprobe br_netfilter
+  when: cpu_vendor.stdout == "AuthenticAMD"
+- name: Ensure netfilter loads at boot time
+  lineinfile:
+    path: /etc/modules-load.d/br_netfilter.conf
+    state: present
+    regexp: '^br_netfilter'
+    line: 'br_netfilter'
+- name: Configure sysctl
+  lineinfile:
+    path: /etc/sysctl.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: '^net.ipv4.ip_forward = 1', line: 'net.ipv4.ip_forward = 1' }
+    - { regexp: '^net.bridge.bridge-nf-call-ip6tables = 0', line: 'net.bridge.bridge-nf-call-ip6tables = 0' }
+    - { regexp: '^net.bridge.bridge-nf-call-iptables = 0', line: 'net.bridge.bridge-nf-call-iptables = 0' }
+    - { regexp: '^net.bridge.bridge-nf-call-arptables = 0', line: 'net.bridge.bridge-nf-call-arptables = 0' }
+    - { regexp: '^net.ipv4.conf.default.rp_filter = 0', line: 'net.ipv4.conf.default.rp_filter = 0' }
+    - { regexp: '^net.ipv4.conf.all.rp_filter = 0', line: 'net.ipv4.conf.all.rp_filter = 0' }
+- name: Reload sysctl
+  shell: |
+    sysctl -p

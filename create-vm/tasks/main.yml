@@ -1,0 +1,94 @@
+---
+- name: Get the shortname of the server to be used for the qcow2 file image. ({{ item.servername }})
+  shell: |
+    SHORT_NAME=$(echo {{ item.servername }} | awk -F. '{print $1}')
+    echo "${SHORT_NAME}.qcow2"
+  register: server_qcow2
+- name: Check if qcow2 file exists already ({{ item.servername }})
+  stat:
+    path: /var/lib/libvirt/images/{{ server_qcow2.stdout }}
+  register: qcow2_file
+- name: Fail if QCOW2 exists ({{ item.servername }})
+  debug:
+    msg: "Warning: /var/lib/libvirt/images/{{ server_qcow2.stdout }} exists, will not create VM."
+  when: qcow2_file.stat.exists
+- name: Create QCOW2 image ({{ item.servername }})
+  shell: |
+    export LIBGUESTFS_BACKEND=direct
+    qemu-img create -f qcow2 /var/lib/libvirt/images/{{ server_qcow2.stdout }} {{ item.rootfs_gb }}G
+    virt-resize --expand {{ source_qcow2.rootfs }} {{ source_qcow2.file }} /var/lib/libvirt/images/{{ server_qcow2.stdout }}
+  when: not qcow2_file.stat.exists
+- name: Create a tempfile to generate the ifcfg file ({{ item.servername }})
+  tempfile:
+    state: file
+    path: /tmp
+  register: ifcfg_file
+  when: not qcow2_file.stat.exists
+- name: Generate the ifcfg file ({{ item.servername }})
+  blockinfile:
+    path: "{{ ifcfg_file.path }}"
+    block: |
+      DEVICE=eth0
+      TYPE=Ethernet
+      ONBOOT=yes
+      IPADDR={{ item.ipv4_address }}
+      PREFIX={{ item.ipv4_prefix }}
+      GATEWAY={{ item.ipv4_gateway }}
+      DEFROUTE=yes
+      STP=no
+  when: not qcow2_file.stat.exists
+- name: Add in DNS Servers from KVM Host ({{ item.servername }})
+  shell: |
+    DNS_NDX=1
+    for NAMESERVER in $(egrep ^nameserver /etc/resolv.conf | awk '{print $2}')
+    do
+      echo "DNS${DNS_NDX}=${NAMESERVER}" >> {{ ifcfg_file.path }}
+      DNS_NDX=$(( ${DNS_NDX} + 1 ))
+    done
+  when: not qcow2_file.stat.exists
+- name: Configuring QCOW2 file ({{ item.servername }})
+  shell: |
+    export LIBGUESTFS_BACKEND=direct
+    virt-customize -a /var/lib/libvirt/images/{{ server_qcow2.stdout }} --root-password password:{{ root_pw }}
+    virt-customize -a /var/lib/libvirt/images/{{ server_qcow2.stdout }} --run-command 'yum remove cloud-init -y'
+    virt-customize -a /var/lib/libvirt/images/{{ server_qcow2.stdout }} --run-command 'mkdir -m 0700 /root/.ssh'
+    virt-customize -a /var/lib/libvirt/images/{{ server_qcow2.stdout }} --copy-in /root/.ssh/id_rsa.pub:/root/.ssh
+    virt-customize -a /var/lib/libvirt/images/{{ server_qcow2.stdout }} --move /root/.ssh/id_rsa.pub:/root/.ssh/authorized_keys
+    virt-customize -a /var/lib/libvirt/images/{{ server_qcow2.stdout }} --run-command 'chmod 600 /root/.ssh/authorized_keys'
+    virt-customize -a /var/lib/libvirt/images/{{ server_qcow2.stdout }} --copy-in {{ ifcfg_file.path }}:/tmp
+    virt-customize -a /var/lib/libvirt/images/{{ server_qcow2.stdout }} --move {{ ifcfg_file.path }}:/etc/sysconfig/network-scripts/ifcfg-eth0
+    virt-customize -a /var/lib/libvirt/images/{{ server_qcow2.stdout }} --touch /.autorelabel
+  when: not qcow2_file.stat.exists
+- name: Creating VM ({{ item.servername }})
+  shell: |
+    virt-install --memory {{ item.ram_mb }} --vcpus {{ item.vcpus }} --os-variant {{ source_qcow2.variant }} --disk path=/var/lib/libvirt/images/{{ server_qcow2.stdout }},device=disk,bus=virtio,format=qcow2 --import --noautoconsole --vnc --network bridge={{ kvm_bridge }} --name {{ item.servername }}
+  when: not qcow2_file.stat.exists
+- name: Updating VM SSH Keys ({{ item.servername }})
+  shell: |
+    ssh-keygen -R {{ item.ipv4_address }} 2>/dev/null
+    ssh-keygen -R {{ item.servername }} 2>/dev/null
+    RC=1
+    TIMEOUT=180
+    while [[ ${RC} -ne 0 ]]
+    do
+      TIMEOUT=$(( ${TIMEOUT} - 5 ))
+      if [[ ${TIMEOUT} -le 0 ]]
+      then
+        echo "TIMEOUT WAITING FOR VM TO START"
+        exit 100
+      fi
+      ping -c1 {{ item.ipv4_address }} 2>&1 >/dev/null
+      RC=$?
+      sleep 5
+    done
+    ssh-keyscan -H {{ item.ipv4_address }}>>/root/.ssh/known_hosts
+    exit 0
+  when: not qcow2_file.stat.exists
+- name: Clean up ifcfg file ({{ item.servername }})
+  file:
+    path: "{{ ifcfg_file.path }}"
+    state: absent
+  when: not qcow2_file.stat.exists
+- name: Configure hostname ({{ item.servername }})
+  shell: |
+    ssh root@{{ item.ipv4_address }} hostnamectl set-hostname {{ item.servername }}

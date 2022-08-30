@@ -1,0 +1,39 @@
+---
+# tasks file for nameserver-role
+- name: Install necessary packages
+  yum:
+    name: dnsmasq
+    state: latest
+- name: Start and enable the service
+  service:
+    name: dnsmasq
+    state: started
+    enabled: true
+- name: Configure dnsmasq server entries
+  lineinfile:
+    path: /etc/dnsmasq.conf
+    regexp: "^{{ item.name }}={{ item.value}}$"
+    line: "{{ item.name }}={{ item.value}}"
+  loop: "{{ dns_server_config.settings }}"
+  notify: Restart dnsmasq
+- name: Configure upstream DNS from server resolv.conf
+  shell: |
+    sed -i '/^server=/d' /etc/dnsmasq.conf
+    for NAMESERVER in $(egrep ^nameserver /etc/resolv.conf | awk '{print $2}')
+    do
+      echo "server=${NAMESERVER}" >> /etc/dnsmasq.conf
+    done
+- name: Configure static DNS entries
+  lineinfile:
+    path: /etc/hosts
+    regexp: "^{{ item.ip }}  *{{ item.name }}"
+    line: "{{ item.ip }} {{item.name }}"
+  loop: "{{ dns_server_config.static_entries }}"
+  notify: Restart dnsmasq
+- name: Configure wildcard DNS entries
+  lineinfile:
+    path: /etc/dnsmasq.conf
+    regexp: "^address=/{{ item.domain }}/{{ item.ip }}"
+    line: "address=/{{ item.domain }}/{{ item.ip }}"
+  loop: "{{ dns_server_config.wildcard_entries }}"
+  notify: Restart dnsmasq
