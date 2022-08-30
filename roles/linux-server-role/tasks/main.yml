@@ -1,0 +1,15 @@
+---
+# tasks file for linux-server-role
+- name: Update all packages
+  yum:
+    name: '*'
+    state: latest
+- name: Install Firewall
+  yum:
+    name: firewalld
+    state: latest
+- name: Enable firewall
+  service:
+    name: firewalld
+    enabled: true
+    state: started

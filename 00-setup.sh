@@ -66,7 +66,7 @@ then
   echo "kvm ansible_host=127.0.0.1" >~/ansible/inventory
 fi
 
-for GALAXY_MODULE in community.libvirt community.general
+for GALAXY_MODULE in community.libvirt community.general ansible.posix
 do
   log "Installing ${GALAXY_MODULE} with ansible-galaxy"
   ansible-galaxy collection install ${GALAXY_MODULE} 2>&1 | tee -a ${LOG_FILE}

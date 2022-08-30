@@ -2,4 +2,9 @@
 # handlers file for nameserver-role
 - name: Restart dnsmasq
   service:
+    name: dnsmasq
+    state: restarted
+- name: Restart firewalld
+  service:
+    name: firewalld
     state: restarted

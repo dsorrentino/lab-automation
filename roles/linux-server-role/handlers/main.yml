@@ -1,0 +1,6 @@
+---
+# handlers file for linux-server-role
+- name: Restart firewalld
+  service:
+    name: firewalld
+    state: restarted

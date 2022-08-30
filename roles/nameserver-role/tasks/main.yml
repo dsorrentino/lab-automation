@@ -37,3 +37,10 @@
     line: "address=/{{ item.domain }}/{{ item.ip }}"
   loop: "{{ dns_server_config.wildcard_entries }}"
   notify: Restart dnsmasq
+- name: Configure firewalld
+  ansible.posix.firewalld:
+    zone: public
+    permanent: yes
+    service: dns
+    state: enabled
+    immediate: yes
