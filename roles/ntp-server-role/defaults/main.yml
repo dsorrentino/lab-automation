@@ -1,2 +1,3 @@
 ---
 # defaults file for ntp-server-role
+ntp_allowed_network: 127.0.0.1/32

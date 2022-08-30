@@ -1,2 +1,27 @@
 ---
 # tasks file for ntp-server-role
+- name: Install necessary packages
+  yum:
+    name: chrony
+    state: latest
+- name: Start and enable the service
+  service:
+    name: chronyd.service
+    state: started
+    enabled: true
+- name: Configure chronyd to server time for {{ ntp_allowed_network }}
+  template:
+    src: chrony.conf.j2
+    dest: /etc/chrony.conf
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  notify: Restart NTP Server
+- name: Allow NTP Connections
+  ansible.posix.firewalld:
+    zone: public
+    permanent: yes
+    service: ntp
+    state: enabled
+    immediate: yes

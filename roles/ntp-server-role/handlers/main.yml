@@ -1,2 +1,6 @@
 ---
 # handlers file for ntp-server-role
+- name: Restart NTP Server
+  service:
+    name: chronyd.service
+    state: restarted
