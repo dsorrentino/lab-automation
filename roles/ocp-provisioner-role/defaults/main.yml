@@ -5,3 +5,13 @@ kni_use_provisioning_network: false
 kni_baremetal_interface: eth0
 kni_provisioning_interface: eth1
 kni_installer_version: stable-4.11
+install_config:
+  base_domain: example.com
+  cluster_name: ocp
+  machine_network_cidr: 192.168.0.0/24
+  provisioning_network_cidr: 192.168.10.0/24
+  bootstrap_ip: 192.168.0.100
+  bootstrap_gateway: 192.168.0.1
+  api_vip: 192.168.0.9
+  ingress_vip: 192.168.0.10
+

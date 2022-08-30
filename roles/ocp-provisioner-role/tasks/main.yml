@@ -48,6 +48,17 @@
     mode: '0755'
     backup: no
     force: yes
+- debug:
+    var: install_config
+- name: Create base install-config.yaml
+  template:
+    src: install-config.yaml.j2
+    dest: /home/kni/install-config.yaml
+    owner: kni
+    group: kni
+    mode: '0644'
+    backup: no
+    force: yes
 - name: Grant sudo access to kni user
   copy:
     content: "kni ALL=(root) NOPASSWD:ALL"

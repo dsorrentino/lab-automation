@@ -18,6 +18,15 @@ kni_use_provisioning_network: (boolean) if a provisioning network should be conf
 kni_baremetal_interface: The non-bridged, default configured interface which the baremetal bridge will be built on
 kni_provisioning_interface: The non-bridged, default configured interface which the provisioning bridge will be built on
 kni_installer_version: The version that will be installed. This is only used in the ~kni/get_openshift.sh helper script.
+install_config:
+  base_domain: Base domain for the deployment
+  cluster_name: OCP cluster name
+  machine_network_cidr: External network CIDR
+  provisioning_network_cidr: Provisioning network CIDR (Optional)
+  bootstrap_ip: The IP given to the bootstrap node during IPI deployment
+  bootstrap_gateway: The gateway used by the bootstrap node during IPI deployment
+  api_vip: The API VIP for the OCP Cluster
+  ingress_vip: The Wildcard IP for the OCP Cluster
 
 Example Playbook
 ----------------
