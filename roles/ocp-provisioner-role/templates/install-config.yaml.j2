@@ -65,4 +65,4 @@ platform:
         rootDeviceHints:
          deviceName: "/dev/sda"
 pullSecret: '{{ pull_secret }}'
-sshKey: '<ssh_pub_key>'
+sshKey: '{{ kni_pub_key['content'] | b64decode | trim }}'

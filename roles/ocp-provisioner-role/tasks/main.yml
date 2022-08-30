@@ -11,6 +11,21 @@
     password: "{{ kni_user_password | password_hash('sha512') }}"
     groups:
       - libvirt
+- name: Generate a SSH key for user kni
+  shell: |
+    if [[ ! -f /home/kni/.ssh/id_rsa ]]
+    then
+      su - kni -c "ssh-keygen -t ed25519 -f /home/kni/.ssh/id_rsa -N ''"
+    fi
+- name: Grant sudo access to kni user
+  copy:
+    content: "kni ALL=(root) NOPASSWD:ALL"
+    dest: /etc/sudoers.d/kni
+    owner: root
+    group: root
+    mode: '0440'
+    backup: no
+    force: yes
 - name: Copy pull secret to kni user
   copy:
     content: "{{ pull_secret }}"
@@ -48,8 +63,10 @@
     mode: '0755'
     backup: no
     force: yes
-- debug:
-    var: install_config
+- name: Get the kni user public key
+  slurp:
+    src: /home/kni/.ssh/id_rsa.pub
+  register: kni_pub_key
 - name: Create base install-config.yaml
   template:
     src: install-config.yaml.j2
@@ -59,21 +76,6 @@
     mode: '0644'
     backup: no
     force: yes
-- name: Grant sudo access to kni user
-  copy:
-    content: "kni ALL=(root) NOPASSWD:ALL"
-    dest: /etc/sudoers.d/kni
-    owner: root
-    group: root
-    mode: '0440'
-    backup: no
-    force: yes
-- name: Generate a SSH key for user kni
-  shell: |
-    if [[ ! -f /home/kni/.ssh/id_rsa ]]
-    then
-      su - kni -c "ssh-keygen -t ed25519 -f /home/kni/.ssh/id_rsa -N ''"
-    fi
 - name: Start and enable libvirtd
   service:
     name: libvirtd
