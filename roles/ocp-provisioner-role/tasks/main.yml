@@ -11,6 +11,43 @@
     password: "{{ kni_user_password | password_hash('sha512') }}"
     groups:
       - libvirt
+- name: Copy pull secret to kni user
+  copy:
+    content: "{{ pull_secret }}"
+    dest: /home/kni/pull-secret.txt
+    owner: kni
+    group: kni
+    mode: '0600'
+    backup: no
+    force: yes
+- name: Create basic script to retrieve the OpenShift Container Platform installer
+  copy:
+    content: |
+      #!/bin/bash
+
+      PULL_SECRET=~/pull-secret.txt
+
+      export VERSION={{ kni_installer_version }}
+      export RELEASE_ARCH=$(uname -i)
+      export RELEASE_IMAGE=$(curl -s https://mirror.openshift.com/pub/openshift-v4/$RELEASE_ARCH/clients/ocp/$VERSION/release.txt | grep 'Pull From: quay.io' | awk -F ' ' '{print $3}')
+
+      #Get the oc binary:
+      curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp/$VERSION/openshift-client-linux.tar.gz | tar zxvf - oc
+
+      export cmd=openshift-baremetal-install
+      export pullsecret_file=${PULL_SECRET}
+      export extract_dir=$(pwd)
+
+      #Extract the installer:
+      sudo cp oc /usr/local/bin
+      oc adm release extract --registry-config "${pullsecret_file}" --command=$cmd --to "${extract_dir}" ${RELEASE_IMAGE}
+      sudo cp openshift-baremetal-install /usr/local/bin
+    dest: /home/kni/get_openshift.sh
+    owner: kni
+    group: kni
+    mode: '0755'
+    backup: no
+    force: yes
 - name: Grant sudo access to kni user
   copy:
     content: "kni ALL=(root) NOPASSWD:ALL"
@@ -62,15 +99,22 @@
     fi
 
     WORK_FILE=$(mktemp)
-    sed '/^# .*ANSIBLE.*/d;/^NAME=/d;/^BRIDGE=/d;s/^#//g;s/^DEVICE=.*/DEVICE=baremetal/g;s/^TYPE=.*/TYPE=Bridge/g' /etc/sysconfig/network-scripts/ifcfg-{{ kni_baremetal_interface }} >${WORK_FILE}
+    cat /dev/null>${WORK_FILE}
+    sed '/^# .*ANSIBLE.*/d;/^NAME=/d;/^BRIDGE=/d;/^UUID=/d;/^STP=/d;s/^#//g;s/^DEVICE=.*/DEVICE=baremetal/g;s/^TYPE=.*/TYPE=Bridge/g' /etc/sysconfig/network-scripts/ifcfg-{{ kni_baremetal_interface }} >${WORK_FILE}
     echo 'NAME=baremetal' >>${WORK_FILE}
+    echo 'STP=no' >>${WORK_FILE}
     if [[ -f /etc/sysconfig/network-scripts/ifcfg-baremetal ]]
     then
-      diff ${WORK_FILE} /etc/sysconfig/network-scripts/ifcfg-baremetal >/dev/null
+      cat ${WORK_FILE} | sort -u > ${WORK_FILE}.sort1
+      cat /etc/sysconfig/network-scripts/ifcfg-baremetal | egrep -v '^UUID=' | sort -u >${WORK_FILE}.sort2
+      diff ${WORK_FILE}.sort1 ${WORK_FILE}.sort2
       if [[ $? -ne 0 ]]
       then
         NETWORK_CHANGE=true
       fi
+      rm -f ${WORK_FILE}.sort1 ${WORK_FILE}.sort2
+    else
+      NETWORK_CHANGE=true
     fi
     cat ${WORK_FILE} >/etc/sysconfig/network-scripts/ifcfg-baremetal
 
@@ -88,7 +132,7 @@
   register: baremetal_network_change
 - name: Configure provisioning bridge (Optional)
   shell: |
-    export NETWORK_CHANGE=false
+   export NETWORK_CHANGE=false
     if [[ ! -f /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }} ]]
     then
       echo "ERROR> Missing interface: /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }}"
@@ -96,15 +140,22 @@
     fi
 
     WORK_FILE=$(mktemp)
-    sed '/^# .*ANSIBLE.*/d;/^NAME=/d;/^BRIDGE=/d;s/^#//g;s/^DEVICE=.*/DEVICE=provisioning/g;s/^TYPE=.*/TYPE=Bridge/g' /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }} >${WORK_FILE}
+    cat /dev/null>${WORK_FILE}
+    sed '/^# .*ANSIBLE.*/d;/^NAME=/d;/^BRIDGE=/d;/^UUID=/d;/^STP=/d;s/^#//g;s/^DEVICE=.*/DEVICE=provisioning/g;s/^TYPE=.*/TYPE=Bridge/g' /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }} >${WORK_FILE}
     echo 'NAME=provisioning' >>${WORK_FILE}
+    echo 'STP=no' >>${WORK_FILE}
     if [[ -f /etc/sysconfig/network-scripts/ifcfg-provisioning ]]
     then
-      diff ${WORK_FILE} /etc/sysconfig/network-scripts/ifcfg-provisioning >/dev/null
+      cat ${WORK_FILE} | sort -u > ${WORK_FILE}.sort1
+      cat /etc/sysconfig/network-scripts/ifcfg-provisioning | egrep -v '^UUID=' | sort -u >${WORK_FILE}.sort2
+      diff ${WORK_FILE}.sort1 ${WORK_FILE}.sort2
       if [[ $? -ne 0 ]]
       then
         NETWORK_CHANGE=true
       fi
+      rm -f ${WORK_FILE}.sort1 ${WORK_FILE}.sort2
+    else
+      NETWORK_CHANGE=true
     fi
     cat ${WORK_FILE} >/etc/sysconfig/network-scripts/ifcfg-provisioning
 

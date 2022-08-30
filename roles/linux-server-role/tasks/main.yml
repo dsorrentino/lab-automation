@@ -4,12 +4,61 @@
   yum:
     name: '*'
     state: latest
-- name: Install Firewall
+- name: Install packages
   yum:
-    name: firewalld
+    name: "{{ item }}"
     state: latest
-- name: Enable firewall
+  loop:
+    - firewalld
+    - chrony
+- name: Enable services
   service:
-    name: firewalld
+    name: "{{ item }}"
     enabled: true
     state: started
+  loop:
+    - firewalld
+    - chronyd
+- name: Disable pool configuration (chronyd)
+  replace:
+    path: /etc/chrony.conf
+    regexp: '^pool '
+    replace: '#pool '
+- name: Remove existing servers configuration (chronyd)
+  lineinfile:
+    path: /etc/chrony.conf
+    state: absent
+    regexp: '^server '
+- name: Enable servers configuration (chronyd)
+  lineinfile:
+    path: /etc/chrony.conf
+    regexp: "^server {{ item }}"
+    line: "server {{ item }}"
+    insertafter: EOF
+  loop: "{{ ntp_servers }}"
+- name: Restart chronyd
+  service:
+    name: chronyd.service
+    state: restarted
+- name: Get DNS connection
+  shell: |
+    INTERFACE=$(nmcli | egrep -A20 '^DNS configuration:' | egrep 'interface:' | head -1 | awk '{print $NF}')
+    CONNECTION_NAME=$(nmcli dev show ${INTERFACE} | egrep GENERAL.CONNECTION: | sed 's/^GENERAL.CONNECTION: *//g;')
+    CONNECTION=$(nmcli con show "${CONNECTION_NAME}" | egrep connection.uuid: | awk '{print $NF}')
+    if [[ ! -z "$(nmcli con show ${CONNECTION} | grep ipv4.dns)" ]]
+    then
+      # Clear existing DNS
+      nmcli con mod ${CONNECTION} ipv4.dns ''
+      if [[ -f /etc/sysconfig/network-scripts/ifcfg-${INTERFACE} ]]
+      then
+        sed -i 's/^DNS=/#DNS=/g' /etc/sysconfig/network-scripts/ifcfg-${INTERFACE}
+      fi
+      echo "${CONNECTION}"
+    fi
+    echo ""
+  register: dns_connection
+- name: Configure DNS Servers
+  shell: |
+    nmcli con mod {{ dns_connection.stdout }} +ipv4.dns {{ item }}
+  loop: "{{ dns_servers }}"
+  when: dns_connection.stdout != ""

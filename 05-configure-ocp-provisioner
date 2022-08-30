@@ -1,8 +1,17 @@
 - hosts: provisioner
   vars:
     kni_baremetal_interface: eth0
+    dns_servers:
+      - 192.168.66.6
+      - 192.168.254.20
+      - 192.168.254.21
+    ntp_servers:
+      - 192.168.66.6
+      - 192.168.254.20
+      - 192.168.254.21
   vars_files:
     - vault/kni_password.yml
+    - vault/pull_secret.yml
   roles:
     - linux-server-role
     - ocp-provisioner-role

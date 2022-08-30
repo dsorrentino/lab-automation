@@ -4,3 +4,4 @@ kni_user_password: calvin
 kni_use_provisioning_network: false
 kni_baremetal_interface: eth0
 kni_provisioning_interface: eth1
+kni_installer_version: stable-4.11

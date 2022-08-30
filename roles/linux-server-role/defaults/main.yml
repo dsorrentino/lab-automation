@@ -1,0 +1,6 @@
+---
+# defaults file for linux-server-role
+dns_servers:
+  - 192.168.0.254
+ntp_servers:
+  - 192.168.0.254

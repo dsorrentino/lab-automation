@@ -17,6 +17,7 @@ kni_user_password: Password to use for the kni user
 kni_use_provisioning_network: (boolean) if a provisioning network should be configured
 kni_baremetal_interface: The non-bridged, default configured interface which the baremetal bridge will be built on
 kni_provisioning_interface: The non-bridged, default configured interface which the provisioning bridge will be built on
+kni_installer_version: The version that will be installed. This is only used in the ~kni/get_openshift.sh helper script.
 
 Example Playbook
 ----------------
