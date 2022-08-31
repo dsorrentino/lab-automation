@@ -2,21 +2,28 @@
   vars:
     kni_baremetal_interface: eth0
     dns_servers:
-      - 192.168.66.6
-      - 192.168.254.20
-      - 192.168.254.21
+      - 192.168.0.254
     ntp_servers:
-      - 192.168.66.6
-      - 192.168.254.20
-      - 192.168.254.21
+      - 192.168.0.254
     install_config:
-      base_domain: sand2.auto.bos2.lab
+      base_domain: example.com
       cluster_name: ocp
-      machine_network_cidr: 192.168.66.0/25
-      bootstrap_ip: 192.168.66.7
-      bootstrap_gateway: 192.168.66.1
-      api_vip: 192.168.66.11
-      ingress_vip: 192.168.66.10
+      machine_network_cidr: 192.168.0.0/24
+      provisioning_network_cidr: 192.168.10.0/24
+      bootstrap_ip: 192.168.0.100
+      bootstrap_gateway: 192.168.0.1
+      api_vip: 192.168.0.9
+      ingress_vip: 192.168.0.10
+      hosts:
+        ipmi_user: root
+        ipmi_password: calvin
+        master:
+          - { ipmi_ip: '192.168.99.100', boot_mac: 'AA:AA:AA:AA:AA:AA' }
+          - { ipmi_ip: '192.168.99.101', boot_mac: 'BB:BB:BB:BB:BB:BB' }
+          - { ipmi_ip: '192.168.99.102', boot_mac: 'CC:CC:CC:CC:CC:CC' }
+        worker:
+          - { ipmi_ip: '192.168.99.103', boot_mac: 'DD:DD:DD:DD:DD:DD' }
+          - { ipmi_ip: '192.168.99.104', boot_mac: 'EE:EE:EE:EE:EE:EE' }
   vars_files:
     - vault/kni_password.yml
     - vault/pull_secret.yml
