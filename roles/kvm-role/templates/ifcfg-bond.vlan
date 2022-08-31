@@ -1,0 +1,10 @@
+IPV6_DISABLED=yes
+IPV6INIT=no
+DEVICE={{ bond_name }}
+BOOTPROTO=none
+ONPARENT=yes
+BRIDGE=br-vlan{{ vlan_id }}
+NM_CONTROLLED=0
+MTU=8950
+VLAN=yes
+NOZEROCONF=true

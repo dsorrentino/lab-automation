@@ -14,4 +14,13 @@ install_config:
   bootstrap_gateway: 192.168.0.1
   api_vip: 192.168.0.9
   ingress_vip: 192.168.0.10
-
+  hosts:
+    ipmi_user: root
+    ipmi_password: calvin
+    master:
+      - { ipmi_ip: '192.168.99.100', boot_mac: 'AA:AA:AA:AA:AA:AA' }
+      - { ipmi_ip: '192.168.99.101', boot_mac: 'BB:BB:BB:BB:BB:BB' }
+      - { ipmi_ip: '192.168.99.102', boot_mac: 'CC:CC:CC:CC:CC:CC' }
+    worker:
+      - { ipmi_ip: '192.168.99.103', boot_mac: 'DD:DD:DD:DD:DD:DD' }
+      - { ipmi_ip: '192.168.99.104', boot_mac: 'EE:EE:EE:EE:EE:EE' }

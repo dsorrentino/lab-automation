@@ -1,0 +1,117 @@
+- name: Determine default interface information
+  shell: |
+    GATEWAY=$(ip r s default | awk '{print $3}')
+    DEVICE=$(ip r s default | awk '{print $5}')
+    CONNECTION_NAME=$(nmcli dev show ${DEVICE} | egrep '^GENERAL.CONNECTION:' | awk -F: '{print $2}' | sed 's/^  *//g')
+    CONNECTION_ID=$(nmcli con show "${CONNECTION_NAME}" | egrep '^connection.uuid' | awk '{print $NF}')
+    CIDR=$(nmcli con show ${CONNECTION_ID} | egrep '^ipv4.addresses:' | awk '{print $NF}')
+    IPADDR=$(echo ${CIDR} | awk -F/ '{print $1}')
+    PREFIX=$(echo ${CIDR} | awk -F/ '{print $2}')
+    GATEWAY=$(nmcli con show ${CONNECTION_ID} | egrep '^ipv4.gateway:' | awk '{print $NF}')
+    DNS=$(nmcli con show ${CONNECTION_ID} | egrep '^ipv4.dns:' | awk '{print $NF}')
+    if [[ -z "${DEVICE}" || -z "${IPADDR}" || -z "${PREFIX}" || -z "${GATEWAY}" || -z "${DNS}" ]]
+    then
+      echo "ERROR"
+    else
+      echo "INTERFACE=${DEVICE} IPADDR=${IPADDR} PREFIX=${PREFIX} GATEWAY=${GATEWAY} DNS=${DNS}"
+    fi
+    exit 0
+  register: initial_network_config
+- name: Determine default interface information (GATEWAY)
+  shell: |
+    GATEWAY=$(ip r s default | awk '{print $3}')
+    if [[ -z "${GATEWAY}" ]]
+    then
+      echo "ERROR"
+    else
+      echo "${GATEWAY}"
+    fi
+    exit 0
+  register: initial_gateway
+- name: Determine default interface information (DEVICE)
+  shell: |
+    GATEWAY=$(ip r s default | awk '{print $3}')
+    DEVICE=$(ip r s default | awk '{print $5}')
+    if [[ -z "${DEVICE}" ]]
+    then
+      echo "ERROR"
+    else
+      echo "${DEVICE}"
+    fi
+    exit 0
+  register: initial_device
+- name: Determine default interface information (IPADDR)
+  shell: |
+    GATEWAY=$(ip r s default | awk '{print $3}')
+    DEVICE=$(ip r s default | awk '{print $5}')
+    CONNECTION_NAME=$(nmcli dev show ${DEVICE} | egrep '^GENERAL.CONNECTION:' | awk -F: '{print $2}' | sed 's/^  *//g')
+    CONNECTION_ID=$(nmcli con show "${CONNECTION_NAME}" | egrep '^connection.uuid' | awk '{print $NF}')
+    CIDR=$(nmcli con show ${CONNECTION_ID} | egrep '^ipv4.addresses:' | awk '{print $NF}')
+    IPADDR=$(echo ${CIDR} | awk -F/ '{print $1}')
+    if [[ -z "${IPADDR}" ]]
+    then
+      echo "ERROR"
+    else
+      echo "${IPADDR}"
+    fi
+    exit 0
+  register: initial_ipaddr
+- name: Determine default interface information (PREFIX)
+  shell: |
+    GATEWAY=$(ip r s default | awk '{print $3}')
+    DEVICE=$(ip r s default | awk '{print $5}')
+    CONNECTION_NAME=$(nmcli dev show ${DEVICE} | egrep '^GENERAL.CONNECTION:' | awk -F: '{print $2}' | sed 's/^  *//g')
+    CONNECTION_ID=$(nmcli con show "${CONNECTION_NAME}" | egrep '^connection.uuid' | awk '{print $NF}')
+    CIDR=$(nmcli con show ${CONNECTION_ID} | egrep '^ipv4.addresses:' | awk '{print $NF}')
+    PREFIX=$(echo ${CIDR} | awk -F/ '{print $2}')
+    if [[ -z "${PREFIX}" ]]
+    then
+      echo "ERROR"
+    else
+      echo "${PREFIX}"
+    fi
+    exit 0
+  register: initial_prefix
+- name: Determine default interface information (DNS)
+  shell: |
+    GATEWAY=$(ip r s default | awk '{print $3}')
+    DEVICE=$(ip r s default | awk '{print $5}')
+    CONNECTION_NAME=$(nmcli dev show ${DEVICE} | egrep '^GENERAL.CONNECTION:' | awk -F: '{print $2}' | sed 's/^  *//g')
+    CONNECTION_ID=$(nmcli con show "${CONNECTION_NAME}" | egrep '^connection.uuid' | awk '{print $NF}')
+    CIDR=$(nmcli con show ${CONNECTION_ID} | egrep '^ipv4.addresses:' | awk '{print $NF}')
+    DNS=$(nmcli con show ${CONNECTION_ID} | egrep '^ipv4.dns:' | awk '{print $NF}')
+    if [[ -z "${DNS}" ]]
+    then
+      echo "ERROR"
+    else
+      echo "${DNS}"
+    fi
+    exit 0
+  register: initial_dns
+- name: Fail if unable to get existing network configuration
+  fail:
+    msg: "ERROR: COULD NOT DETERMINE EXISTING NETWORK CONFIG."
+  when: initial_device.stdout == "ERROR" or initial_ipaddr.stdout == "ERROR" or initial_prefix.stdout == "ERROR" or initial_gateway.stdout == "ERROR" or initial_dns.stdout == "ERROR"
+- name: Set facts to configure the bridge
+  set_fact:
+    interface_name: "{{ initial_device.stdout }}"
+    bridge_name: br0
+    bridge_ip: "{{ initial_ipaddr.stdout }}"
+    bridge_prefix: "{{ initial_prefix.stdout }}"
+    bridge_gateway: "{{ initial_gateway.stdout }}"
+- name: Create basic networking file (interface)
+  template:
+    src: ifcfg-interface-bridge
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ interface_name }}
+    owner: root
+    group: root
+    mode: '0644'
+    force: yes
+- name: Create basic networking file (bridge)
+  template:
+    src: ifcfg-bridge
+    dest: /etc/sysconfig/network-scripts/ifcfg-br0
+    owner: root
+    group: root
+    mode: '0644'
+    force: yes

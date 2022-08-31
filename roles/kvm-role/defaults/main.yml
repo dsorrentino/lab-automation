@@ -1,0 +1,12 @@
+configure_networking: no
+advanced_networking: no
+network_config:
+  interfaces:
+    - { interface_name: eth0, bond_name: bond0 }
+    - { interface_name: eth1, bond_name: bond0 }
+  bonds:
+    - { bond_name: bond0, bridge_name: br0 }
+    - { bond_name: bond0.16, bridge_name: br-vlan16, vlan_id: 16 }
+  bridges:
+    - { bridge_name: br0, bridge_ip: 192.168.0.5, bridge_prefix: 25, bridge_gateway: 192.168.0.1 }
+    - { bridge_name: br-vlan16, bridge_ip: 172.16.0.5, bridge_prefix: 24, vlan_id: 16 }

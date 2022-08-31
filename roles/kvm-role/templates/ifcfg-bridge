@@ -1,0 +1,22 @@
+DEVICE={{ bridge_name }}
+TYPE=Bridge
+ONBOOT=yes
+IPADDR={{ bridge_ip }}
+PREFIX={{ bridge_prefix }}
+GATEWAY={{ bridge_gateway }}
+STP=no
+PROXY_METHOD=none
+BROWSER_ONLY=no
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME={{ bridge_name }}
+BOOTPROTO=none
+PEERDNS=no
+IPV6_DEFROUTE=no
+IPV6_FAILURE_FATAL=no
+AUTOCONNECT_SLAVES=yes
+NM_CONTROLLED=0
+MTU=8950
+BRIDGING_OPTS="ageing_time=0"
+NOZEROCONF=true

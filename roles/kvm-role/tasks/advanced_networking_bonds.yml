@@ -1,0 +1,12 @@
+- name: Set facts to configure bond
+  set_fact:
+    bond_name: "{{ item.bond_name }}"
+    bridge_name: "{{ item.bridge_name }}"
+- name: Create advanced networking file (bond)
+  template:
+    src: ifcfg-bond
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ bond_name }}
+    owner: root
+    group: root
+    mode: '0644'
+    force: yes

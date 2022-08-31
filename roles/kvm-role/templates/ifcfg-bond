@@ -1,0 +1,14 @@
+BONDING_OPTS="mode=balance-rr downdelay=0 miimon=100 updelay=0"
+TYPE=Bond
+BONDING_MASTER=yes
+PROXY_METHOD=none
+BROWSER_ONLY=no
+IPV6_DISABLED=yes
+IPV6INIT=no
+NAME={{ bond_name }}
+DEVICE={{ bond_name }}
+ONBOOT=yes
+BRIDGE={{ bridge_name }}
+NM_CONTROLLED=0
+MTU=8950
+NOZEROCONF=true

@@ -1,0 +1,9 @@
+TYPE=Ethernet
+NAME={{ interface_name }}
+DEVICE={{ interface_name }}
+ONBOOT=yes
+MASTER={{ bond_name }}
+SLAVE=yes
+NM_CONTROLLED=0
+MTU=8960
+NOZEROCONF=true

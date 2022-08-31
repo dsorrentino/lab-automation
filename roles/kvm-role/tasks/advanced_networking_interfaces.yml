@@ -1,0 +1,12 @@
+- name: Set facts to configure interface
+  set_fact:
+    interface_name: "{{ item.interface_name }}"
+    bond_name: "{{ item.bond_name }}"
+- name: Create advanced networking (interfaces)
+  template:
+    src: ifcfg-interface-bond
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ interface_name }}
+    owner: root
+    group: root
+    mode: '0644'
+    force: yes

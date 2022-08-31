@@ -7,7 +7,15 @@ dns_server_config:
     - { name: "listen-address", value: "::1,127.0.0.1" }
   domain: example.com
   static_entries:
-    - { name: server1.example.com, ip: 192.168.0.5 }
+    - { name: utility.example.com, ip: 192.168.0.6 }
+    - { name: provisioner.ocp.example.com, ip: 192.168.0.7 }
+    - { name: api.ocp.example.com, ip: 192.168.0.11 }
+    - { name: openshift-master-0.ocp.example.com, ip: 192.168.0.20 }
+    - { name: openshift-master-1.ocp.example.com, ip: 192.168.0.21 }
+    - { name: openshift-master-2.ocp.example.com, ip: 192.168.0.22 }
+    - { name: openshift-worker-0.ocp.example.com, ip: 192.168.0.30 }
+    - { name: openshift-worker-1.ocp.example.com, ip: 192.168.0.31 }
+    - { name: openshift-worker-2.ocp.example.com, ip: 192.168.0.32 }
   wildcard_entries:
-    - { domain: apps.example.com, ip: 192.168.0.250 }
+    - { domain: apps.ocp.example.com, ip: 192.168.0.250 }
 

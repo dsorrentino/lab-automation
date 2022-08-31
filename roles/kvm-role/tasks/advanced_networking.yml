@@ -1,0 +1,19 @@
+- name: Create advanced networking ifcfg files (interfaces)
+  include_tasks: advanced_networking_interfaces.yml
+  loop: "{{ network_config.interfaces }}"
+- name: Create advanced networking ifcfg files (bonds without VLANS)
+  include_tasks: advanced_networking_bonds.yml
+  loop: "{{ network_config.bonds }}"
+  when: item.vlan_id is not defined
+- name: Create advanced networking ifcfg files (bonds with VLANS)
+  include_tasks: advanced_networking_bonds_vlans.yml
+  loop: "{{ network_config.bonds }}"
+  when: item.vlan_id is defined
+- name: Create advanced networking ifcfg files (bridges without VLANS)
+  include_tasks: advanced_networking_bridges.yml
+  loop: "{{ network_config.bridges }}"
+  when: item.vlan_id is not defined
+- name: Create advanced networking ifcfg files (bridges with VLANS)
+  include_tasks: advanced_networking_bridges_vlans.yml
+  loop: "{{ network_config.bridges }}"
+  when: item.vlan_id is defined

@@ -1,0 +1,14 @@
+- name: Set facts to configure bridge
+  set_fact:
+    bridge_name: "{{ item.bridge_name }}"
+    bridge_ip: "{{ item.bridge_ip }}"
+    bridge_prefix: "{{ item.bridge_prefix }}"
+    vlan_id: "{{ item.vlan_id }}"
+- name: Create advanced networking file (bridge)
+  template:
+    src: ifcfg-bridge.vlan
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ bridge_name }}
+    owner: root
+    group: root
+    mode: '0644'
+    force: yes

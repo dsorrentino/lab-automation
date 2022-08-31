@@ -1,0 +1,8 @@
+TYPE=Ethernet
+NAME={{ interface_name }}
+DEVICE={{ interface_name }}
+BRIDGE={{ bridge_name }}
+ONBOOT=yes
+NM_CONTROLLED=0
+MTU=8960
+NOZEROCONF=true
