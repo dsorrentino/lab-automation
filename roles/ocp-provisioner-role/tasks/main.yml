@@ -74,7 +74,7 @@
   register: kni_pub_key
 - name: Create base install-config.yaml
   template:
-    src: install-config.yaml.j2
+    src: install-config-provisioning.j2
     dest: /home/kni/{{ item }}/install-config.yaml
     owner: kni
     group: kni
@@ -153,7 +153,7 @@
   register: baremetal_network_change
 - name: Configure provisioning bridge (Optional)
   shell: |
-   export NETWORK_CHANGE=false
+    export NETWORK_CHANGE=false
     if [[ ! -f /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }} ]]
     then
       echo "ERROR> Missing interface: /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }}"

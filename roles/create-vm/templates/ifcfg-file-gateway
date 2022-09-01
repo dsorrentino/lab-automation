@@ -1,0 +1,9 @@
+DEVICE=eth{{ device_id }}
+TYPE=Ethernet
+ONBOOT=yes
+IPADDR={{ nic.ipv4_address }}
+PREFIX={{ nic.ipv4_prefix }}
+GATEWAY={{ nic.ipv4_gateway }}
+DEFROUTE={{ nic.ipv4_defroute }}
+STP=no
+NOZEROCONF=yes

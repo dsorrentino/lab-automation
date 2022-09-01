@@ -18,6 +18,7 @@ platform:
   baremetal:
     apiVIP: {{ install_config.api_vip }}
     ingressVIP: {{ install_config.ingress_vip }}
+    provisioningNetwork: "Disabled"
     bootstrapExternalStaticIP: {{ install_config.bootstrap_ip }}
     bootstrapExternalStaticGateway: {{ install_config.bootstrap_gateway }}
     hosts:

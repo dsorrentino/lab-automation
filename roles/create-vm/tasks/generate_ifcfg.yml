@@ -1,0 +1,24 @@
+- block:
+    - name: Generate the ifcfg file with gateway ({{ item.servername }})
+      template:
+        src: ifcfg-file-gateway
+        dest: "{{ ifcfg_work_directory.path }}/ifcfg-eth{{ device_id }}"
+    - name: Add in DNS Servers from KVM Host ({{ item.servername }})
+      shell: |
+        DNS_NDX=1
+        for NAMESERVER in $(egrep ^nameserver /etc/resolv.conf | awk '{print $2}')
+        do
+          echo "DNS${DNS_NDX}=${NAMESERVER}" >> {{ ifcfg_work_directory.path }}/ifcfg-eth{{ device_id }}
+          DNS_NDX=$(( ${DNS_NDX} + 1 ))
+        done
+        export DEFROUTE=$(echo "{{ nic.ipv4_defroute }}" | tr '[:upper:]' '[:lower:]')
+        if [[ "${DEFROUTE}" == "true" || "${DEFROUTE}" == "yes" ]]
+        then
+          echo "{{ nic.ipv4_address }}" >{{ ifcfg_work_directory.path }}/default_ip
+        fi
+  when: nic.ipv4_gateway is defined
+- name: Generate the ifcfg file with no gateway ({{ item.servername }})
+  template:
+    src: ifcfg-file-no-gateway
+    dest: "{{ ifcfg_work_directory.path }}/ifcfg-eth{{ device_id }}"
+  when: nic.ipv4_gateway is not defined

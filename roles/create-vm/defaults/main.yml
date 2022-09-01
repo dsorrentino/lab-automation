@@ -1,2 +1,30 @@
 ---
 # defaults file for create-vm
+#    - source_qcow2:
+#        file: /root/rhel-8.6-x86_64-kvm-rootpw-Redhat01.qcow2
+#        rootfs: /dev/sda3
+#        variant: rhel8.5
+#    - virtual_machines:
+#      - servername: utility.example.com
+#        vcpus: 2
+#        ram_mb: 8192
+#        rootfs_gb: 20
+#        network:
+#          - host_bridge: br0
+#            ipv4_address: 192.168.0.6
+#            ipv4_prefix: 25
+#            ipv4_gateway: 192.168.0.1
+#            ipv4_defroute: true
+#      - servername: provisioner.ocp.example.com
+#        vcpus: 2
+#        ram_mb: 8192
+#        rootfs_gb: 100
+#        network:
+#          - host_bridge: br0
+#            ipv4_address: 192.168.0.7
+#            ipv4_prefix: 25
+#            ipv4_gateway: 192.168.0.1
+#          - host_bridge: br-vlan16
+#            ipv4_address: 172.16.0.7
+#            ipv4_prefix: 24
+#            ipv4_defroute: false
