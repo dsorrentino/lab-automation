@@ -74,7 +74,7 @@
   register: kni_pub_key
 - name: Create base install-config.yaml
   template:
-    src: install-config-provisioning.j2
+    src: install-config-provisioning.yaml.j2
     dest: /home/kni/{{ item }}/install-config.yaml
     owner: kni
     group: kni
