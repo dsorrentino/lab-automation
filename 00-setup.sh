@@ -20,7 +20,7 @@ then
   exit 1
 fi
 
-for PKG in ansible-core ansible-collection-redhat-rhel_mgmt
+for PKG in ansible-core ansible-collection-redhat-rhel_mgmt jq
 do
   if [[ -z "$(rpm -qa | grep ${PKG})" ]]
   then
