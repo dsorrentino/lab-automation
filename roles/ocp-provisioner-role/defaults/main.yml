@@ -31,6 +31,7 @@ install_config:
   bootstrap_provisioning_prefix: 24
   bootstrap_provisioning_gateway: 192.168.10.5
   bootstrap_dns_configuration: 192.168.0.254;1.1.1.1;1.0.0.1;
+  ntp_server_configuration: 192.168.66.4
   api_vip: 192.168.0.9
   ingress_vip: 192.168.0.10
   baremetal:

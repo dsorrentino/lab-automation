@@ -1,0 +1,4 @@
+#!/bin/bash
+
+~kni/binaries/butane ~kni/{{ helper_scripts }}/99-master-chrony-conf-override.bu -o ~kni/clusterconfigs/openshift/99_openshift-machineconfig_99-master-chronyd.yaml
+~kni/binaries/butane ~kni/{{ helper_scripts }}/99-worker-chrony-conf-override.bu -o ~kni/clusterconfigs/openshift/99_openshift-machineconfig_99-worker-chronyd.yaml

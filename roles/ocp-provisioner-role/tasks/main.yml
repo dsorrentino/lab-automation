@@ -41,6 +41,19 @@
     - create_manifests.sh
     - create_cluster.sh
     - destroy_cluster.sh
+    - change_cluster_ntp.sh
+- name: Copy butane scripts
+  template:
+    src: "{{ item }}.j2"
+    dest: /home/kni/{{ helper_scripts }}/{{ item }}
+    owner: kni
+    group: kni
+    mode: '0600'
+    backup: no
+    force: yes
+  loop:
+    - 99-master-chrony-conf-override.bu
+    - 99-worker-chrony-conf-override.bu
 - name: Create baremetal tools
   include_tasks: baremetal_tools.yml
 - name: Create basic script to retrieve the OpenShift Container Platform installer

@@ -1,0 +1,32 @@
+variant: openshift
+version: 4.11.0
+metadata:
+  name: 99-worker-chrony-conf-override
+  labels:
+    machineconfiguration.openshift.io/role: worker
+storage:
+  files:
+    - path: /etc/chrony.conf
+      mode: 0644
+      overwrite: true
+      contents:
+        inline: |
+          # The Machine Config Operator manages this file.
+{% for host in install_config.baremetal.hosts %}
+{% if host.role == 'master' %}
+          server openshift-{{ host.role }}-{{ host.role_index}}.{{ install_config.cluster_name }}.{{ install_config.base_domain }} iburst
+{% endif %}
+{% endfor %}
+
+          stratumweight 0
+          driftfile /var/lib/chrony/drift
+          rtcsync
+          makestep 10 3
+          bindcmdaddress 127.0.0.1
+          bindcmdaddress ::1
+          keyfile /etc/chrony.keys
+          commandkey 1
+          generatecommandkey
+          noclientlog
+          logchange 0.5
+          logdir /var/log/chrony
