@@ -28,6 +28,7 @@
     - logs
     - "{{ baremetal_tools }}"
     - "{{ helper_scripts }}"
+    - "{{ helper_scripts }}/manifests"
 - name: Copy helper scripts to kni user
   copy:
     src: "{{ item }}"
@@ -54,6 +55,50 @@
   loop:
     - 99-master-chrony-conf-override.bu
     - 99-worker-chrony-conf-override.bu
+- name: Create YAML to configure networking components to run on masters
+  copy:
+    content: |
+      apiVersion: machineconfiguration.openshift.io/v1
+      kind: MachineConfig
+      metadata:
+        name: 50-worker-fix-ipi-rwn
+        labels:
+          machineconfiguration.openshift.io/role: worker
+      spec:
+        config:
+          ignition:
+            version: 3.2.0
+          storage:
+            files:
+              - path: /etc/kubernetes/manifests/keepalived.yaml
+                mode: 0644
+                contents:
+                  source: data:,
+    dest: /home/kni/{{ helper_scripts }}/manifests/cluster-network-avoid-workers-99-config.yaml
+    owner: kni
+    group: kni
+    mode: '0600'
+    backup: no
+    force: yes
+- name: Create YAML to configure networking components to run on masters
+  copy:
+    content: |
+      apiVersion: operator.openshift.io/v1
+      kind: IngressController
+      metadata:
+        name: default
+        namespace: openshift-ingress-operator
+      spec:
+        nodePlacement:
+          nodeSelector:
+            matchLabels:
+              node-role.kubernetes.io/master: ""
+    dest: /home/kni/{{ helper_scripts }}/manifests/cluster-ingress-default-ingresscontroller.yaml 
+    owner: kni
+    group: kni
+    mode: '0600'
+    backup: no
+    force: yes
 - name: Create baremetal tools
   include_tasks: baremetal_tools.yml
 - name: Create basic script to retrieve the OpenShift Container Platform installer
