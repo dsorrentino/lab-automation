@@ -1,27 +1,43 @@
 ---
 # defaults file for ocp-provisioner-role
+configure_host:
+  boolean:
+    libvirt: no
+    networking: no
+    firewalld: yes
+    dns: yes
+    ntp: yes
+  setting:
+    baremetal_interface: eth0
+    provisioning_interface: eth1
+configure_libvirt: no
 kni_user_password: calvin
+baremetal_user: admin
+baremetal_password: password
 kni_use_provisioning_network: false
-kni_baremetal_interface: eth0
-kni_provisioning_interface: eth1
 kni_installer_version: stable-4.11
 install_config:
   base_domain: example.com
   cluster_name: ocp
+  external_bridge: baremetal
+  provisioning_bridge: provisioning
   machine_network_cidr: 192.168.0.0/24
   provisioning_network_cidr: 192.168.10.0/24
-  provisioning_dhcp_range:  192.168.10.10,192.168.10.250
-  bootstrap_ip: 192.168.0.100
-  bootstrap_gateway: 192.168.0.1
+  provisioning_dhcp_range:  192.168.10.50,192.168.10.250
+  bootstrap_external_ip: 192.168.0.10
+  bootstrap_external_prefix: 24
+  bootstrap_external_gateway: 192.168.0.1
+  bootstrap_provisioning_ip: 192.168.10.10
+  bootstrap_provisioning_prefix: 24
+  bootstrap_provisioning_gateway: 192.168.10.5
+  bootstrap_dns_configuration: 192.168.0.254;1.1.1.1;1.0.0.1;
   api_vip: 192.168.0.9
   ingress_vip: 192.168.0.10
-  hosts:
-    ipmi_user: root
-    ipmi_password: calvin
-    master:
-      - { ipmi_ip: '192.168.99.100', boot_mac: 'AA:AA:AA:AA:AA:AA' }
-      - { ipmi_ip: '192.168.99.101', boot_mac: 'BB:BB:BB:BB:BB:BB' }
-      - { ipmi_ip: '192.168.99.102', boot_mac: 'CC:CC:CC:CC:CC:CC' }
-    worker:
-      - { ipmi_ip: '192.168.99.103', boot_mac: 'DD:DD:DD:DD:DD:DD' }
-      - { ipmi_ip: '192.168.99.104', boot_mac: 'EE:EE:EE:EE:EE:EE' }
+  baremetal:
+    use_nmstate: true
+    hosts:
+      - { role: master, role_index: 0, bmc_type: ipmi, bmc_ip: '192.168.99.100', boot_mac: 'AA:AA:AA:AA:AA:AA', external_nic: eno12345, provisioning_nic: eno67890, external_ip: 192.168.0.20, provisioning_ip: 192.168.10.20, provisioning_vlan: 10, external_vlan: 5 }
+      - { role: master, role_index: 1, bmc_type: ipmi, bmc_ip: '192.168.99.101', boot_mac: 'BB:BB:BB:BB:BB:BB', external_nic: eno12345, provisioning_nic: eno67890, external_ip: 192.168.0.21, provisioning_ip: 192.168.10.21, provisioning_vlan: 10, external_vlan: 5 }
+      - { role: master, role_index: 2, bmc_type: ipmi, bmc_ip: '192.168.99.102', boot_mac: 'CC:CC:CC:CC:CC:CC', external_nic: eno12345, provisioning_nic: eno67890, external_ip: 192.168.0.22, provisioning_ip: 192.168.10.22, provisioning_vlan: 10, external_vlan: 5 }
+      - { role: worker, role_index: 0, bmc_type: ipmi, bmc_ip: '192.168.99.103', boot_mac: 'DD:DD:DD:DD:DD:DD', external_nic: eno12345, provisioning_nic: eno67890, external_ip: 192.168.0.30, provisioning_ip: 192.168.10.30, provisioning_vlan: 10, external_vlan: 5 }
+      - { role: worker, role_index: 1, bmc_type: ipmi, bmc_ip: '192.168.99.104', boot_mac: 'EE:EE:EE:EE:EE:EE', external_nic: eno12345, provisioning_nic: eno67890, external_ip: 192.168.0.31, provisioning_ip: 192.168.10.31, provisioning_vlan: 10, external_vlan: 5 }

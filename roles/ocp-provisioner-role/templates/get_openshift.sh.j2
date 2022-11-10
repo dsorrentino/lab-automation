@@ -3,7 +3,7 @@
 PULL_SECRET=~/pull-secret.txt
 SCRIPT=$(basename $0)
 PID=$(pgrep ${SCRIPT})
-LOG_FILE=~/logs/get_openshift.${PID}.$(date +'%Y%m%d').log
+LOG_FILE=~/logs/get_openshift.$$.$(date +'%Y%m%d').log
 
 log() {
   if [[ ! -r ${LOG_FILE} ]]
@@ -38,3 +38,14 @@ oc adm release extract --registry-config "${pullsecret_file}" --command=$cmd --t
 
 log "Copying openshift-baremetal-install to /usr/local/bin"
 sudo cp openshift-baremetal-install /usr/local/bin
+
+BUTANE_URL="https://mirror.openshift.com/pub/openshift-v4/clients/butane/latest/butane"
+if [[ "${RELEASE_ARCH}" != "x86_64" ]]
+then
+  BUTANE_URL="${BUTANE_URL}-${RELEASE_ARCH}"
+fi
+
+log "Downloading latest butane: ${BUTANE_URL}"
+
+curl -o ${extract_dir}/butane -s ${BUTANE_URL}
+chmod 755 ${extract_dir}/butane

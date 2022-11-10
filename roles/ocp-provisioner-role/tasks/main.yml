@@ -4,28 +4,8 @@
   yum:
     name: "{{ kni_required_packages }}"
     state: latest
-- name: Add the kni user
-  user:
-    name: kni
-    comment: OCP Provisioning User
-    password: "{{ kni_user_password | password_hash('sha512') }}"
-    groups:
-      - libvirt
-- name: Generate a SSH key for user kni
-  shell: |
-    if [[ ! -f /home/kni/.ssh/id_rsa ]]
-    then
-      su - kni -c "ssh-keygen -t ed25519 -f /home/kni/.ssh/id_rsa -N ''"
-    fi
-- name: Grant sudo access to kni user
-  copy:
-    src: sudoers_kni
-    dest: /etc/sudoers.d/kni
-    owner: root
-    group: root
-    mode: '0440'
-    backup: no
-    force: yes
+- name: Configure user - kni
+  include_tasks: configure_user_kni.yml
 - name: Copy pull secret to kni user
   copy:
     content: "{{ pull_secret }}"
@@ -35,29 +15,7 @@
     mode: '0600'
     backup: no
     force: yes
-- name: Copy helper scripts to kni user
-  copy:
-    src: "{{ item }}"
-    dest: /home/kni/{{ item }}
-    owner: kni
-    group: kni
-    mode: '0755'
-    backup: no
-    force: yes
-  loop:
-    - create_manifests.sh
-    - create_cluster.sh
-    - destroy_cluster.sh
-- name: Create basic script to retrieve the OpenShift Container Platform installer
-  template:
-    src: get_openshift.sh.j2
-    dest: /home/kni/get_openshift.sh
-    owner: kni
-    group: kni
-    mode: '0755'
-    backup: no
-    force: yes
-- name: Create the deployment directories
+- name: Create directory (/home/kni/{{ item }})
   file:
     path: /home/kni/{{ item }}
     state: directory
@@ -68,13 +26,39 @@
     - clusterconfigs
     - initialconfigs
     - logs
+    - "{{ baremetal_tools }}"
+    - "{{ helper_scripts }}"
+- name: Copy helper scripts to kni user
+  copy:
+    src: "{{ item }}"
+    dest: /home/kni/{{ helper_scripts }}/{{ item }}
+    owner: kni
+    group: kni
+    mode: '0755'
+    backup: no
+    force: yes
+  loop:
+    - create_manifests.sh
+    - create_cluster.sh
+    - destroy_cluster.sh
+- name: Create baremetal tools
+  include_tasks: baremetal_tools.yml
+- name: Create basic script to retrieve the OpenShift Container Platform installer
+  template:
+    src: get_openshift.sh.j2
+    dest: /home/kni/{{ helper_scripts }}/get_openshift.sh
+    owner: kni
+    group: kni
+    mode: '0755'
+    backup: no
+    force: yes
 - name: Get the kni user public key
   slurp:
     src: /home/kni/.ssh/id_rsa.pub
   register: kni_pub_key
 - name: Create base install-config.yaml
   template:
-    src: install-config-provisioning.yaml.j2
+    src: install-config.yaml.j2
     dest: /home/kni/{{ item }}/install-config.yaml
     owner: kni
     group: kni
@@ -84,115 +68,13 @@
   loop:
     - initialconfigs
     - clusterconfigs
-- name: Start and enable libvirtd
-  service:
-    name: libvirtd
-    enabled: yes
-    state: started
+- name: Configure vibvirtd
+  include_tasks: configure_libvird.yml
+  when: configure_host.boolean.libvirt
 - name: Add http service to firewalld
   ansible.posix.firewalld:
     service: http
     permanent: yes
     immediate: yes
     state: enabled
-- name: Create the default storage pool
-  shell: |
-    # In order to use community.libvirt.virt_pool, would need to install deps on provisioner
-    if [[ -z "$(virsh pool-list | grep ' default ')" ]]
-    then
-      virsh pool-define-as --name default --type dir --target /var/lib/libvirt/images
-    fi
-    if [[ -z "$(virsh pool-list | grep ' default   active ')" ]]
-    then
-      virsh pool-start default
-    fi
-    if [[ -z "$(virsh pool-list | grep ' default   active   yes')" ]]
-    then
-      virsh pool-autostart default
-    fi
-- name: Configure baremetal bridge
-  shell: |
-    export NETWORK_CHANGE=false
-    if [[ ! -f /etc/sysconfig/network-scripts/ifcfg-{{ kni_baremetal_interface }} ]]
-    then
-      echo "ERROR> Missing interface: /etc/sysconfig/network-scripts/ifcfg-{{ kni_baremetal_interface }}"
-      exit 255
-    fi
-
-    WORK_FILE=$(mktemp)
-    cat /dev/null>${WORK_FILE}
-    sed '/^# .*ANSIBLE.*/d;/^NAME=/d;/^BRIDGE=/d;/^UUID=/d;/^STP=/d;s/^#//g;s/^DEVICE=.*/DEVICE=baremetal/g;s/^TYPE=.*/TYPE=Bridge/g' /etc/sysconfig/network-scripts/ifcfg-{{ kni_baremetal_interface }} >${WORK_FILE}
-    echo 'NAME=baremetal' >>${WORK_FILE}
-    echo 'STP=no' >>${WORK_FILE}
-    if [[ -f /etc/sysconfig/network-scripts/ifcfg-baremetal ]]
-    then
-      cat ${WORK_FILE} | sort -u > ${WORK_FILE}.sort1
-      cat /etc/sysconfig/network-scripts/ifcfg-baremetal | egrep -v '^UUID=' | sort -u >${WORK_FILE}.sort2
-      diff ${WORK_FILE}.sort1 ${WORK_FILE}.sort2
-      if [[ $? -ne 0 ]]
-      then
-        NETWORK_CHANGE=true
-      fi
-      rm -f ${WORK_FILE}.sort1 ${WORK_FILE}.sort2
-    else
-      NETWORK_CHANGE=true
-    fi
-    cat ${WORK_FILE} >/etc/sysconfig/network-scripts/ifcfg-baremetal
-
-    cat /etc/sysconfig/network-scripts/ifcfg-{{ kni_baremetal_interface }} >${WORK_FILE}
-    sed -i '/^BRIDGE=/d;s/^DNS/#DNS/g;s/^IPADDR=/#IPADDR=/g;s/^PREFIX=/#PREFIX=/g;s/^GATEWAY=/#GATEWAY=/g;s/^DEFROUTE=/#DEFROUTE=/g' ${WORK_FILE}
-    echo "BRIDGE=baremetal" >>${WORK_FILE}
-    diff ${WORK_FILE} /etc/sysconfig/network-scripts/ifcfg-{{ kni_baremetal_interface }} >/dev/null
-    if [[ $? -ne 0 ]]
-    then
-      NETWORK_CHANGE=true
-    fi
-    cat ${WORK_FILE} >/etc/sysconfig/network-scripts/ifcfg-{{ kni_baremetal_interface }}
-    rm -f ${WORK_FILE}
-    echo "NETWORK_CHANGE=${NETWORK_CHANGE}"
-  register: baremetal_network_change
-- name: Configure provisioning bridge (Optional)
-  shell: |
-    export NETWORK_CHANGE=false
-    if [[ ! -f /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }} ]]
-    then
-      echo "ERROR> Missing interface: /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }}"
-      exit 255
-    fi
-
-    WORK_FILE=$(mktemp)
-    cat /dev/null>${WORK_FILE}
-    sed '/^# .*ANSIBLE.*/d;/^NAME=/d;/^BRIDGE=/d;/^UUID=/d;/^STP=/d;s/^#//g;s/^DEVICE=.*/DEVICE=provisioning/g;s/^TYPE=.*/TYPE=Bridge/g' /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }} >${WORK_FILE}
-    echo 'NAME=provisioning' >>${WORK_FILE}
-    echo 'STP=no' >>${WORK_FILE}
-    if [[ -f /etc/sysconfig/network-scripts/ifcfg-provisioning ]]
-    then
-      cat ${WORK_FILE} | sort -u > ${WORK_FILE}.sort1
-      cat /etc/sysconfig/network-scripts/ifcfg-provisioning | egrep -v '^UUID=' | sort -u >${WORK_FILE}.sort2
-      diff ${WORK_FILE}.sort1 ${WORK_FILE}.sort2
-      if [[ $? -ne 0 ]]
-      then
-        NETWORK_CHANGE=true
-      fi
-      rm -f ${WORK_FILE}.sort1 ${WORK_FILE}.sort2
-    else
-      NETWORK_CHANGE=true
-    fi
-    cat ${WORK_FILE} >/etc/sysconfig/network-scripts/ifcfg-provisioning
-
-    cat /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }} >${WORK_FILE}
-    sed -i '/^BRIDGE=/d;s/^DNS/#DNS/g;s/^IPADDR=/#IPADDR=/g;s/^PREFIX=/#PREFIX=/g;s/^GATEWAY=/#GATEWAY=/g;s/^DEFROUTE=/#DEFROUTE=/g' ${WORK_FILE}
-    echo "BRIDGE=provisioning" >>${WORK_FILE}
-    diff ${WORK_FILE} /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }} >/dev/null
-    if [[ $? -ne 0 ]]
-    then
-      NETWORK_CHANGE=true
-    fi
-    cat ${WORK_FILE} >/etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }}
-    rm -f ${WORK_FILE}
-    echo "NETWORK_CHANGE=${NETWORK_CHANGE}"
-  when: kni_use_provisioning_network
-  register: provisioning_network_change
-- name: Reboot if the network changed
-  reboot:
-  when: baremetal_network_change.stdout == "NETWORK_CHANGE=true" or (kni_use_provisioning_network and provisioning_network_change.stdout == "NETWORK_CHANGE=true")
+  when: configure_host.boolean.firewalld

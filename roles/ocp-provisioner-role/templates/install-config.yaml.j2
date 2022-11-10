@@ -1,0 +1,133 @@
+apiVersion: v1
+baseDomain: {{ install_config.base_domain }}
+metadata:
+  name: {{ install_config.cluster_name }}
+networking:
+  machineNetwork:
+  - cidr: {{ install_config.machine_network_cidr }}
+  networkType: OVNKubernetes
+compute:
+- name: worker
+  replicas: 2
+controlPlane:
+  name: master
+  replicas: 3
+  platform:
+    baremetal: {}
+platform:
+  baremetal:
+    apiVIP: {{ install_config.api_vip }}
+    ingressVIP: {{ install_config.ingress_vip }}
+    externalBridge: {{ install_config.external_bridge }}
+    bootstrapExternalStaticIP: {{ install_config.bootstrap_external_ip }}
+    bootstrapExternalStaticGateway: {{ install_config.bootstrap_external_gateway }}
+{% if kni_use_provisioning_network %}
+    bootstrapProvisioningIP: {{ install_config.bootstrap_provisioning_ip }}
+    provisioningBridge: {{ install_config.provisioning_bridge }}
+    provisioningNetworkCIDR: {{ install_config.provisioning_network_cidr }}
+    provisioningDHCPRange: {{ install_config.provisioning_dhcp_range }}
+{% else %}
+    provisioningNetwork: "Disabled"
+{% endif %}
+{% if install_config.cluster_provisioning_ip is defined %}    
+    clusterProvisioningIP: {{ install_config.cluster_provisioning_ip }}
+{% endif %}
+    hosts:
+{% for host in install_config.baremetal.hosts %}
+      - name: openshift-{{ host.role }}-{{ host.role_index }}
+        role: {{ host.role }}
+        bmc:
+{% if host.bmc_type == 'redfish' %}
+          address: {{ host.bmc_type }}://{{ host.bmc_ip }}/redfish/v1/Systems/System.Embedded.1
+          disableCertificateVerification: True
+{% else %}
+          address: {{ host.bmc_type }}://{{ host.bmc_ip }}
+{% endif %}
+          username: {{ baremetal_user }}
+          password: {{ baremetal_password }}
+        bootMACAddress: {{ host.boot_mac }}
+{% if host.role == 'master' %}
+        hardwareProfile: default
+{% else %}
+        hardwareProfile: unknown
+{% endif %}
+{% if install_config.baremetal.use_nmstate %}
+        networkConfig:
+          interfaces:
+{% if host.external_vlan is defined and host.external_vlan is number %}
+          - name: {{ host.external_nic }}
+            type: ethernet
+            state: up
+          - name: {{ host.external_nic }}.{{ host.external_vlan }}
+            type: vlan
+            state: up
+            vlan:
+              base-iface: {{ host.external_nic }}
+              id: {{ host.external_vlan }}
+            ipv4:
+              address:
+              - ip: {{ host.external_ip }}
+                prefix-length: {{ install_config.bootstrap_external_prefix }}
+              dhcp: false
+              enabled: true
+{% else %}
+          - name: {{ host.external_nic }}
+            type: ethernet
+            state: up
+            ipv4:
+              address:
+              - ip: {{ host.external_ip }}
+                prefix-length: {{ install_config.bootstrap_external_prefix }}
+              dhcp: false
+              enabled: true
+{% endif %}
+{% if host.provisioning_vlan is defined and host.provisioning_vlan is number %}
+          - name: {{ host.provisioning_nic }}
+            type: ethernet
+            state: up
+          - name: {{ host.provisioning_nic }}.{{ host.provisioning_vlan }}
+            type: vlan
+            state: up
+            vlan:
+              base-iface: {{ host.provisioning_nic }}
+              id: {{ host.provisioning_vlan }}
+            ipv4:
+              address:
+              - ip: {{ host.provisioning_ip }}
+                prefix-length: {{ install_config.bootstrap_provisioning_prefix }}
+              dhcp: false
+              enabled: true
+{% else %}
+          - name: {{ host.provisioning_nic }}
+            type: ethernet
+            state: up
+            ipv4:
+              address:
+              - ip: {{ host.provisioning_ip }}
+                prefix-length: {{ install_config.bootstrap_provisioning_prefix }}
+              dhcp: false
+              enabled: true
+{% endif %}
+          dns-resolver:
+            config:
+              server:
+{% if ';' in install_config.bootstrap_dns_configuration %}
+{% for dns_server in install_config.bootstrap_dns_configuration.split(';') %}
+              - {{ dns_server }}
+{% endfor %}
+{% else %}
+              - {{ install_config.bootstrap_dns_configuration }}
+{% endif %}
+          routes:
+            config:
+            - destination: 0.0.0.0/0
+              next-hop-address: {{ install_config.bootstrap_external_gateway }}
+{% if host.external_vlan is defined and host.external_vlan is number %}
+              next-hop-interface: {{ host.external_nic }}.{{ host.external_vlan }}
+{% else %}
+              next-hop-interface: {{ host.external_nic }}
+{% endif %}
+{% endif %}
+{% endfor %}
+pullSecret: '{{ pull_secret }}'
+sshKey: '{{ kni_pub_key['content'] | b64decode | trim }}'

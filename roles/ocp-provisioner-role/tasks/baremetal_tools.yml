@@ -1,0 +1,28 @@
+---
+# Create baremetal tools
+- name: Create hardware.csv for baremetal_tools
+  file:
+    path: /home/kni/{{ baremetal_tools }}/hardware.csv
+    state: touch
+    owner: kni
+    group: kni
+    mode: '0600'
+- name: Add nodes to hardware.cnv
+  lineinfile:
+    path: /home/kni/{{ baremetal_tools }}/hardware.csv
+    regexp: '^openshift-{{ item.role }}-{{ item.role_index }},'
+    line: 'openshift-{{ item.role }}-{{ item.role_index }},{{ item.bmc_ip }},{{ baremetal_user }},{{ baremetal_password }}'
+  loop: "{{ install_config.baremetal.hosts }}"
+- name: Copy baremetal tools scripts
+  template:
+    src: "{{ item }}.j2"
+    dest: /home/kni/{{ baremetal_tools }}/{{ item }}
+    owner: kni
+    group: kni
+    mode: '0700'
+    backup: no
+    force: yes
+  loop:
+    - power_status.sh
+    - power_off.sh
+    - power_on.sh

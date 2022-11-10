@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+# Reference: https://bugzilla.redhat.com/show_bug.cgi?id=2048600
+
+BOOTSTRAP_IGN=~/clusterconfigs/bootstrap.ign
+
+EXTERNAL_INTERFACE=ens3
+EXTERNAL_ADDRESS={{ install_config.bootstrap_external_ip }}/{{ install_config.bootstrap_external_prefix }}
+EXTERNAL_GATEWAY={{ install_config.bootstrap_external_gateway }}
+EXTERNAL_DNS="{{ install_config.bootstrap_dns_configuration }}"
+
+PROVISIONING_INTERFACE=ens4
+PROVISIONING_ADDRESS={{ install_config.bootstrap_provisioning_ip }}/{{ install_config.bootstrap_provisioning_prefix }}
+PROVISIONING_GATEWAY={{ install_config.bootstrap_provisioning_gateway }}
+
+PROVISIONING_CONFIG="[connection]
+id=${PROVISIONING_INTERFACE}
+type=ethernet
+interface-name=${PROVISIONING_INTERFACE}
+
+[ethernet]
+
+[ipv4]
+address1=${PROVISIONING_ADDRESS}
+gateway=${PROVISIONING_GATEWAY}
+dns=${EXTERNAL_DNS}
+method=manual
+never-default=true
+
+[ipv6]
+addr-gen-mode=stable-privacy
+method=auto
+
+[proxy]"
+
+EXTERNAL_CONFIG="[connection]
+id=nmconnection
+type=ethernet
+interface-name=${EXTERNAL_INTERFACE}
+
+[ethernet]
+
+[ipv4]
+address1=${EXTERNAL_ADDRESS}
+gateway=${EXTERNAL_GATEWAY}
+dns=${EXTERNAL_DNS}
+method=manual
+
+[ipv6]
+addr-gen-mode=stable-privacy
+method=auto
+
+[proxy]"
+
+if [[ ! -f ${BOOTSTRAP_IGN} ]]
+then
+	echo "ERROR> Bootstrap IGN (${BOOTSTRAP_IGN}) not found!"
+	exit 1
+fi
+
+echo "External NIC Configuration:"
+echo '---'
+echo "${EXTERNAL_CONFIG}"
+echo '---'
+echo ''
+
+echo "Creating bootstrap_external_nic_config.ign file."
+echo '---'
+cat > bootstrap_external_nic_config.ign << EOF
+  	{
+        "overwrite": true,
+        "path": "/etc/NetworkManager/system-connections/${EXTERNAL_INTERFACE}.nmconnection",
+        "user": {
+          "name": "root"
+        },
+        "contents": {
+        "source": "data:text/plain;charset=utf-8;base64,$(echo "${EXTERNAL_CONFIG}" | base64 -w 0)"
+        },
+	"mode": 384
+      }
+EOF
+cat bootstrap_external_nic_config.ign
+echo '---'
+echo ''
+echo "Provisioning NIC Configuration:"
+echo '---'
+echo "${PROVISIONING_CONFIG}"
+echo '---'
+
+echo ''
+echo "Creating bootstrap_provisioning_nic_config.ign file."
+echo '---'
+cat > bootstrap_provisioning_nic_config.ign << EOF
+        {
+        "overwrite": true,
+        "path": "/etc/NetworkManager/system-connections/${PROVISIONING_INTERFACE}.nmconnection",
+        "user": {
+          "name": "root"
+        },
+        "contents": {
+        "source": "data:text/plain;charset=utf-8;base64,$(echo "${PROVISIONING_CONFIG}" | base64 -w 0)"
+        },
+        "mode": 384
+      }
+EOF
+cat bootstrap_provisioning_nic_config.ign
+echo '---'
+echo ''
+
+BACKUP_FILE=${BOOTSTRAP_IGN}.orig.$(date +'%Y%m%d-%H%M')
+
+echo "Removing default networking configuration file 'nmconnection' from ~/clusterconfigs/bootstrap.ign"
+# Remove the networking configuration file
+cat ${BOOTSTRAP_IGN} | jq 'del(.storage.files[] | select(."path" == "/etc/NetworkManager/system-connections/nmconnection"))' > ~/clusterconfigs/bootstrap.ign.work
+mv ${BOOTSTRAP_IGN} ${BACKUP_FILE}
+
+echo "Injecting bootstrap_external_nic_config.ign into ~/clusterconfigs/bootstrap.ign"
+# Add external network configuration
+jq '.storage.files += $input' ~/clusterconfigs/bootstrap.ign.work --slurpfile input bootstrap_external_nic_config.ign > ~/clusterconfigs/bootstrap.ign.external
+mv ~/clusterconfigs/bootstrap.ign.external ~/clusterconfigs/bootstrap.ign.work
+
+echo "Injecting bootstrap_provisioning_nic_config.ign into ~/clusterconfigs/bootstrap.ign"
+# Add provisioning network configuration
+jq '.storage.files += $input' ~/clusterconfigs/bootstrap.ign.work --slurpfile input bootstrap_provisioning_nic_config.ign > ${BOOTSTRAP_IGN}
+
+rm -f ~/clusterconfigs/bootstrap.ign.external ~/clusterconfigs/bootstrap.ign.work >/dev/null 2>&1

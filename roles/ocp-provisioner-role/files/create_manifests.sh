@@ -1,3 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-~/binaries/openshift-baremetal-install --dir ~/clusterconfigs create manifests 2>&1 | tee -a ~/logs/create_manifests.$(date +'%Y%m%d-%H%M').log
+OCP_RESOURCE=manifests
+
+~/binaries/openshift-baremetal-install --dir ~/clusterconfigs create ${OCP_RESOURCE} 2>&1 | tee -a ~/logs/create_${OCP_RESOURCE}.$(date +'%Y%m%d-%H%M').log

@@ -1,0 +1,23 @@
+---
+- name: Add the kni user
+  user:
+    name: kni
+    comment: OCP Provisioning User
+    password: "{{ kni_user_password | password_hash('sha512') }}"
+    groups:
+      - libvirt
+- name: Generate a SSH key for user kni
+  shell: |
+    if [[ ! -f /home/kni/.ssh/id_rsa ]]
+    then
+      su - kni -c "ssh-keygen -t ed25519 -f /home/kni/.ssh/id_rsa -N ''"
+    fi
+- name: Grant sudo access to kni user
+  copy:
+    src: sudoers_kni
+    dest: /etc/sudoers.d/kni
+    owner: root
+    group: root
+    mode: '0440'
+    backup: no
+    force: yes

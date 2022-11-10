@@ -1,9 +1,9 @@
 ---
 # vars file for ocp-provisioner-role
 kni_required_packages:
-  - libvirt
-  - qemu-kvm
   - mkisofs
   - python3-devel
   - jq
   - ipmitool
+baremetal_tools: baremetal_tools
+helper_scripts: helper_scripts
