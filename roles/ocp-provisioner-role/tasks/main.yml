@@ -28,7 +28,7 @@
     - logs
     - "{{ baremetal_tools }}"
     - "{{ helper_scripts }}"
-    - "{{ helper_scripts }}/manifests"
+    - "{{ helper_scripts }}/overrides"
 - name: Copy helper scripts to kni user
   copy:
     src: "{{ item }}"
@@ -39,14 +39,23 @@
     backup: no
     force: yes
   loop:
-    - create_manifests.sh
-    - create_cluster.sh
-    - destroy_cluster.sh
-    - change_cluster_ntp.sh
+    - 02_create_manifests.sh
+    - 03_create_ignition.sh
+    - 05_create_cluster.sh
+    - 99_destroy_cluster.sh
+- name: Copy bootstrap fix helper scripts to kni user
+  template:
+    src: 04_fix_bootstrap_networking.sh.j2
+    dest: /home/kni/{{ helper_scripts }}/04_fix_bootstrap_networking.sh
+    owner: kni
+    group: kni
+    mode: '0755'
+    backup: no
+    force: yes
 - name: Copy butane scripts
   template:
     src: "{{ item }}.j2"
-    dest: /home/kni/{{ helper_scripts }}/{{ item }}
+    dest: /home/kni/{{ helper_scripts }}/overrides/{{ item }}
     owner: kni
     group: kni
     mode: '0600'
@@ -55,6 +64,16 @@
   loop:
     - 99-master-chrony-conf-override.bu
     - 99-worker-chrony-conf-override.bu
+    - change_cluster_ntp.sh
+- name: Copy change_cluster_ntp.sh script
+  template:
+    src: change_cluster_ntp.sh.j2
+    dest: /home/kni/{{ helper_scripts }}/overrides/change_cluster_ntp.sh
+    owner: kni
+    group: kni
+    mode: '0755'
+    backup: no
+    force: yes
 - name: Create YAML to configure networking components to run on masters
   copy:
     content: |
@@ -74,7 +93,7 @@
                 mode: 0644
                 contents:
                   source: data:,
-    dest: /home/kni/{{ helper_scripts }}/manifests/cluster-network-avoid-workers-99-config.yaml
+    dest: /home/kni/{{ helper_scripts }}/overrides/cluster-network-avoid-workers-99-config.yaml
     owner: kni
     group: kni
     mode: '0600'
@@ -93,7 +112,7 @@
           nodeSelector:
             matchLabels:
               node-role.kubernetes.io/master: ""
-    dest: /home/kni/{{ helper_scripts }}/manifests/cluster-ingress-default-ingresscontroller.yaml 
+    dest: /home/kni/{{ helper_scripts }}/overrides/cluster-ingress-default-ingresscontroller.yaml 
     owner: kni
     group: kni
     mode: '0600'
@@ -103,8 +122,8 @@
   include_tasks: baremetal_tools.yml
 - name: Create basic script to retrieve the OpenShift Container Platform installer
   template:
-    src: get_openshift.sh.j2
-    dest: /home/kni/{{ helper_scripts }}/get_openshift.sh
+    src: 01_get_openshift.sh.j2
+    dest: /home/kni/{{ helper_scripts }}/01_get_openshift.sh
     owner: kni
     group: kni
     mode: '0755'

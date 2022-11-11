@@ -1,4 +1,7 @@
 #!/bin/bash
 
-~kni/binaries/butane ~kni/{{ helper_scripts }}/99-master-chrony-conf-override.bu -o ~kni/clusterconfigs/openshift/99_openshift-machineconfig_99-master-chronyd.yaml
-~kni/binaries/butane ~kni/{{ helper_scripts }}/99-worker-chrony-conf-override.bu -o ~kni/clusterconfigs/openshift/99_openshift-machineconfig_99-worker-chronyd.yaml
+echo "Applying 99-master-chrony-conf-override.bu as ~kni/clusterconfigs/openshift/99_openshift-machineconfig_99-master-chronyd.yaml..." | tee -a ~/logs/override_ntp_.$(date +'%Y%m%d-%H%M').log
+~kni/binaries/butane ~kni/{{ helper_scripts }}/overrides/99-master-chrony-conf-override.bu -o ~kni/clusterconfigs/openshift/99_openshift-machineconfig_99-master-chronyd.yaml
+
+echo "Applying 99-worker-chrony-conf-override.bu as ~kni/clusterconfigs/openshift/99_openshift-machineconfig_99-worker-chronyd.yaml..." | tee -a ~/logs/override_ntp_.$(date +'%Y%m%d-%H%M').log
+~kni/binaries/butane ~kni/{{ helper_scripts }}/overrides/99-worker-chrony-conf-override.bu -o ~kni/clusterconfigs/openshift/99_openshift-machineconfig_99-worker-chronyd.yaml
