@@ -43,15 +43,19 @@
     - 03_create_ignition.sh
     - 05_create_cluster.sh
     - 99_destroy_cluster.sh
-- name: Copy bootstrap fix helper scripts to kni user
+    - 99_clear_known_hosts.sh
+- name: Templatize some helper scripts to kni user
   template:
-    src: 04_fix_bootstrap_networking.sh.j2
-    dest: /home/kni/{{ helper_scripts }}/04_fix_bootstrap_networking.sh
+    src: "{{ item }}.j2"
+    dest: /home/kni/{{ helper_scripts }}/{{ item }}
     owner: kni
     group: kni
     mode: '0755'
     backup: no
     force: yes
+  loop:
+    - 04_fix_bootstrap_networking.sh
+    - 99_cleanup.sh
 - name: Copy butane scripts
   template:
     src: "{{ item }}.j2"
@@ -69,6 +73,15 @@
   template:
     src: change_cluster_ntp.sh.j2
     dest: /home/kni/{{ helper_scripts }}/overrides/change_cluster_ntp.sh
+    owner: kni
+    group: kni
+    mode: '0755'
+    backup: no
+    force: yes
+- name: Copy configure_networking_on_masters.sh script
+  copy:
+    src: configure_networking_on_masters.sh
+    dest: /home/kni/{{ helper_scripts }}/overrides/configure_networking_on_masters.sh
     owner: kni
     group: kni
     mode: '0755'

@@ -112,9 +112,7 @@ platform:
             config:
               server:
 {% if ';' in install_config.bootstrap_dns_configuration %}
-{% for dns_server in install_config.bootstrap_dns_configuration.split(';') %}
-              - {{ dns_server }}
-{% endfor %}
+              - {{ install_config.bootstrap_dns_configuration.split(';')[0] }}
 {% else %}
               - {{ install_config.bootstrap_dns_configuration }}
 {% endif %}

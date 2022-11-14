@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+~/{{ helper_scripts }}/99_destroy_cluster.sh
+rm -rf ~/clusterconfigs/*
+~/{{ baremetal_tools }}/power_off.sh
+~/{{ helper_scripts }}/99_clear_known_hosts.sh
+
+for VM_NAME in $(sudo virsh list --all | grep bootstrap | awk '{print $2}')
+do
+	for COMMAND in destroy undefine
+	do
+		sudo virsh ${COMMAND} ${VM_NAME}
+		sleep 1
+	done
+done
