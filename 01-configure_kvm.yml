@@ -1,0 +1,16 @@
+- hosts: localhost
+  vars:
+    configure_networking: yes
+    advanced_networking: yes
+    network_config:
+      interfaces:
+        - { interface_name: ens0, bond_name: bond0 }
+        - { interface_name: ens1, bond_name: bond0 }
+      bonds:
+        - { bond_name: bond0, bridge_name: provisioning }
+        - { bond_name: bond0.100, bridge_name: baremetal, vlan_id: 100 }
+      bridges:
+        - { bridge_name: baremetal, bridge_ip: 192.168.0.5, bridge_prefix: 24, bridge_gateway: 192.168.0.1, vlan_id: 100 }
+        - { bridge_name: provisioning, bridge_ip: 172.16.0.5, bridge_prefix: 24 }
+  roles:
+    - kvm-role

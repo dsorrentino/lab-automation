@@ -1,0 +1,30 @@
+- hosts: utility
+  vars:
+    dns_servers:
+      - 192.168.254.200
+      - 192.168.254.201
+    ntp_servers:
+      - 192.168.254.250
+      - 192.168.254.251
+    ntp_allowed_network: 192.168.0.0/24
+    dns_server_config:
+      settings:
+        - { name: "domain", value: "ocp.example.com" }
+        - { name: "interface", value: "eth0" }
+        - { name: "listen-address", value: "::1,127.0.0.1,192.168.0.6" }
+      static_entries:
+        - { name: utility.example.com, ip: 192.168.0.6 }
+        - { name: provisioner.ocp.example.com, ip: 192.168.0.7 }
+        - { name: api.ocp.example.com, ip: 192.168.0.11 }
+        - { name: openshift-master-0.ocp.example.com, ip: 192.168.0.20 }
+        - { name: openshift-master-1.ocp.example.com, ip: 192.168.0.21 }
+        - { name: openshift-master-2.ocp.example.com, ip: 192.168.0.22 }
+        - { name: openshift-worker-0.ocp.example.com, ip: 192.168.0.30 }
+        - { name: openshift-worker-1.ocp.example.com, ip: 192.168.0.31 }
+        - { name: openshift-worker-2.ocp.example.com, ip: 192.168.0.32 }
+      wildcard_entries:
+        - { domain: apps.ocp.example.com, ip: 192.168.0.10 }
+  roles:
+    - linux-server-role
+    - nameserver-role
+    - ntp-server-role

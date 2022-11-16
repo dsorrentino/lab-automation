@@ -1,0 +1,24 @@
+- hosts: vms
+  vars:
+    cdn_repos:
+      - rhel-8-for-x86_64-baseos-rpms
+      - rhel-8-for-x86_64-appstream-rpms
+  vars_files:
+    - vault/cdn_creds.yml
+  tasks:
+    - name: Register with CDN
+      community.general.redhat_subscription:
+        state: present
+        username: "{{ cdn_user }}"
+        password: "{{ cdn_password }}"
+        pool: "{{ cdn_pool }}"
+    - name: Disable all respositories
+      community.general.rhsm_repository:
+        name: '*'
+        state: disabled
+    - name: Enable requested repositories
+      community.general.rhsm_repository:
+        name: "{{ item }}"
+        state: enabled
+      with_items: "{{ cdn_repos }}"
+  
