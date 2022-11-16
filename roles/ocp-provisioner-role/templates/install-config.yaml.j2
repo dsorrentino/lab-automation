@@ -26,6 +26,7 @@ platform:
     provisioningBridge: {{ install_config.provisioning_bridge }}
     provisioningNetworkCIDR: {{ install_config.provisioning_network_cidr }}
     provisioningDHCPRange: {{ install_config.provisioning_dhcp_range }}
+    provisioningNetworkInterface: {{ install_config.cluster_provisioning_nic }}
 {% else %}
     provisioningNetwork: "Disabled"
 {% endif %}
@@ -45,7 +46,7 @@ platform:
 {% endif %}
           username: {{ baremetal_user }}
           password: {{ baremetal_password }}
-        bootMACAddress: {{ host.boot_mac }}
+        bootMACAddress: {{ host.boot_mac.lower() }}
 {% if host.role == 'master' %}
         hardwareProfile: default
 {% else %}
@@ -54,6 +55,7 @@ platform:
 {% if install_config.baremetal.use_nmstate %}
         networkConfig:
           interfaces:
+{%if host.external_nic is defined %}
 {% if host.external_vlan is defined and host.external_vlan is number %}
           - name: {{ host.external_nic }}
             type: ethernet
@@ -81,6 +83,8 @@ platform:
               dhcp: false
               enabled: true
 {% endif %}
+{% endif %}
+{% if host.provisioning_nic is defined %}
 {% if host.provisioning_vlan is defined and host.provisioning_vlan is number %}
           - name: {{ host.provisioning_nic }}
             type: ethernet
@@ -107,6 +111,7 @@ platform:
                 prefix-length: {{ install_config.bootstrap_provisioning_prefix }}
               dhcp: false
               enabled: true
+{% endif %}
 {% endif %}
           dns-resolver:
             config:
