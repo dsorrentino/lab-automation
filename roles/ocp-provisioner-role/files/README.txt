@@ -28,6 +28,8 @@ to the ignition file of the bootstrap node.
                 Cleans up any virsh artifacts left behind from a failed deployment
                 Ensures all baremetal nodes are powered off
 
+99_create_image_cache.sh - Script to utilize a local OS Image Cache. Should be run before creating the manifests as it updates install-config.yaml
+
 The overrides directory has configuration files for:
 
 - Changing the NTP configuration of the Masters & Workers

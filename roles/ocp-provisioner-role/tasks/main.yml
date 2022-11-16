@@ -57,6 +57,7 @@
   loop:
     - 04_fix_bootstrap_networking.sh
     - 99_cleanup.sh
+    - 99_create_image_cache.sh
 - name: Copy butane scripts
   template:
     src: "{{ item }}.j2"
