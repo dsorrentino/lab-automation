@@ -32,3 +32,5 @@ The overrides directory has configuration files for:
 
 - Changing the NTP configuration of the Masters & Workers
 - Adding networking components to the master nodes and making them schedulable (if you don't want to deploy workers)
+
+NOTE: The proper place to do the overrides is AFTER creating the manifests but BEFORE creating the igntion files.
