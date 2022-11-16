@@ -26,9 +26,15 @@
     then
       virsh pool-autostart default
     fi
-- name: Configure {{ install_config.external_bridge }} bridge
+- name: Configure "baremetal" bridge
   shell: |
     export NETWORK_CHANGE=false
+    export BRIDGE_NAME="{{ install_config.external_bridge }}"
+    if [[ -z "${BRIDGE_NAME}" ]]
+    then
+      BRIDGE_NAME=baremetal
+    fi
+
     if [[ ! -f /etc/sysconfig/network-scripts/ifcfg-{{ configure_host.setting.baremetal_interface }} ]]
     then
       echo "ERROR> Missing interface: /etc/sysconfig/network-scripts/ifcfg-{{ configure_host.setting.baremetal_interface }}"
@@ -38,12 +44,12 @@
     WORK_FILE=$(mktemp)
     cat /dev/null>${WORK_FILE}
     sed '/^# .*ANSIBLE.*/d;/^NAME=/d;/^BRIDGE=/d;/^UUID=/d;/^STP=/d;s/^#//g;s/^DEVICE=.*/DEVICE=baremetal/g;s/^TYPE=.*/TYPE=Bridge/g' /etc/sysconfig/network-scripts/ifcfg-{{ configure_host.setting.baremetal_interface }} >${WORK_FILE}
-    echo 'NAME={{ install_config.external_bridge }}' >>${WORK_FILE}
+    echo "NAME=${BRIDGE_NAME}" >>${WORK_FILE}
     echo 'STP=no' >>${WORK_FILE}
-    if [[ -f /etc/sysconfig/network-scripts/ifcfg-{{ install_config.external_bridge }} ]]
+    if [[ -f /etc/sysconfig/network-scripts/ifcfg-${BRIDGE_NAME} ]]
     then
       cat ${WORK_FILE} | sort -u > ${WORK_FILE}.sort1
-      cat /etc/sysconfig/network-scripts/ifcfg-{{ install_config.external_bridge }} | egrep -v '^UUID=' | sort -u >${WORK_FILE}.sort2
+      cat /etc/sysconfig/network-scripts/ifcfg-${BRIDGE_NAME} | egrep -v '^UUID=' | sort -u >${WORK_FILE}.sort2
       diff ${WORK_FILE}.sort1 ${WORK_FILE}.sort2
       if [[ $? -ne 0 ]]
       then
@@ -53,11 +59,11 @@
     else
       NETWORK_CHANGE=true
     fi
-    cat ${WORK_FILE} >/etc/sysconfig/network-scripts/ifcfg-{{ install_config.external_bridge }}
+    cat ${WORK_FILE} >/etc/sysconfig/network-scripts/ifcfg-${BRIDGE_NAME}
 
     cat /etc/sysconfig/network-scripts/ifcfg-{{ configure_host.setting.baremetal_interface }} >${WORK_FILE}
     sed -i '/^BRIDGE=/d;s/^DNS/#DNS/g;s/^IPADDR=/#IPADDR=/g;s/^PREFIX=/#PREFIX=/g;s/^GATEWAY=/#GATEWAY=/g;s/^DEFROUTE=/#DEFROUTE=/g' ${WORK_FILE}
-    echo "BRIDGE={{ install_config.external_bridge }}" >>${WORK_FILE}
+    echo "BRIDGE=${BRIDGE_NAME}" >>${WORK_FILE}
     diff ${WORK_FILE} /etc/sysconfig/network-scripts/ifcfg-{{ configure_host.setting.baremetal_interface }} >/dev/null
     if [[ $? -ne 0 ]]
     then
@@ -67,9 +73,16 @@
     rm -f ${WORK_FILE}
     echo "NETWORK_CHANGE=${NETWORK_CHANGE}"
   register: baremetal_network_change
-- name: Configure {{ install_config.provisioning_bridge }} bridge (Optional)
+- name: Configure "provisioning" bridge (Optional)
   shell: |
     export NETWORK_CHANGE=false
+    BRIDGE_NAME="{{ install_config.provisioning_bridge }}"
+
+    if [[ -z "${BRIDGE_NAME}" ]]
+    then
+      BRIDGE_NAME=provisioning
+    fi
+
     if [[ ! -f /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }} ]]
     then
       echo "ERROR> Missing interface: /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }}"
@@ -79,12 +92,12 @@
     WORK_FILE=$(mktemp)
     cat /dev/null>${WORK_FILE}
     sed '/^# .*ANSIBLE.*/d;/^NAME=/d;/^BRIDGE=/d;/^UUID=/d;/^STP=/d;s/^#//g;s/^DEVICE=.*/DEVICE=provisioning/g;s/^TYPE=.*/TYPE=Bridge/g' /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }} >${WORK_FILE}
-    echo 'NAME={{ install_config.provisioning_bridge }}' >>${WORK_FILE}
+    echo 'NAME=${BRIDGE_NAME}' >>${WORK_FILE}
     echo 'STP=no' >>${WORK_FILE}
-    if [[ -f /etc/sysconfig/network-scripts/ifcfg-{{ install_config.provisioning_bridge }} ]]
+    if [[ -f /etc/sysconfig/network-scripts/ifcfg-${BRIDGE_NAME} ]]
     then
       cat ${WORK_FILE} | sort -u > ${WORK_FILE}.sort1
-      cat /etc/sysconfig/network-scripts/ifcfg-{{ install_config.provisioning_bridge }} | egrep -v '^UUID=' | sort -u >${WORK_FILE}.sort2
+      cat /etc/sysconfig/network-scripts/ifcfg-${BRIDGE_NAME} | egrep -v '^UUID=' | sort -u >${WORK_FILE}.sort2
       diff ${WORK_FILE}.sort1 ${WORK_FILE}.sort2
       if [[ $? -ne 0 ]]
       then
@@ -94,11 +107,11 @@
     else
       NETWORK_CHANGE=true
     fi
-    cat ${WORK_FILE} >/etc/sysconfig/network-scripts/ifcfg-{{ install_config.provisioning_bridge }}
+    cat ${WORK_FILE} >/etc/sysconfig/network-scripts/ifcfg-${BRIDGE_NAME}
 
     cat /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }} >${WORK_FILE}
     sed -i '/^BRIDGE=/d;s/^DNS/#DNS/g;s/^IPADDR=/#IPADDR=/g;s/^PREFIX=/#PREFIX=/g;s/^GATEWAY=/#GATEWAY=/g;s/^DEFROUTE=/#DEFROUTE=/g' ${WORK_FILE}
-    echo "BRIDGE={{ install_config.provisioning_bridge }}" >>${WORK_FILE}
+    echo "BRIDGE=${BRIDGE_NAME}" >>${WORK_FILE}
     diff ${WORK_FILE} /etc/sysconfig/network-scripts/ifcfg-{{ kni_provisioning_interface }} >/dev/null
     if [[ $? -ne 0 ]]
     then

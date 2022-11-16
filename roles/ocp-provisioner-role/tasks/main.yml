@@ -44,6 +44,7 @@
     - 05_create_cluster.sh
     - 99_destroy_cluster.sh
     - 99_clear_known_hosts.sh
+    - README.txt
 - name: Templatize some helper scripts to kni user
   template:
     src: "{{ item }}.j2"
@@ -159,7 +160,7 @@
     - initialconfigs
     - clusterconfigs
 - name: Configure vibvirtd
-  include_tasks: configure_libvird.yml
+  include_tasks: configure_libvirtd.yml
   when: configure_host.boolean.libvirt
 - name: Add http service to firewalld
   ansible.posix.firewalld:

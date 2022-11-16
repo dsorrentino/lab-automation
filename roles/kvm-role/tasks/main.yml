@@ -74,10 +74,10 @@
       when: false
     - name: Configure basic networking
       import_tasks: basic_networking.yml
-      when: not advanced_networking
+      when: not configure_host.boolean.advanced_networking
     - name: Configure advanced networking
       import_tasks: advanced_networking.yml
-      when: advanced_networking
+      when: configure_host.boolean.advanced_networking
     - name: Install network-scripts
       yum:
         name: network-scripts
@@ -95,4 +95,4 @@
         state: started
     - debug:
         msg: It is recommended to reboot to ensure all networking comes back up as expected.
-  when: configure_networking
+  when: configure_host.boolean.networking

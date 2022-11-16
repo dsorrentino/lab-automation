@@ -3,14 +3,12 @@
 configure_host:
   boolean:
     libvirt: no
-    networking: no
     firewalld: yes
     dns: yes
     ntp: yes
   setting:
     baremetal_interface: eth0
     provisioning_interface: eth1
-configure_libvirt: no
 kni_user_password: calvin
 baremetal_user: admin
 baremetal_password: password
@@ -19,9 +17,11 @@ kni_installer_version: stable-4.11
 install_config:
   base_domain: example.com
   cluster_name: ocp
+  machine_network_cidr: 192.168.0.0/24
+  api_vip: 192.168.0.9
+  ingress_vip: 192.168.0.10
   external_bridge: baremetal
   provisioning_bridge: provisioning
-  machine_network_cidr: 192.168.0.0/24
   provisioning_network_cidr: 192.168.10.0/24
   provisioning_dhcp_range:  192.168.10.50,192.168.10.250
   bootstrap_external_ip: 192.168.0.10
@@ -29,11 +29,9 @@ install_config:
   bootstrap_external_gateway: 192.168.0.1
   bootstrap_provisioning_ip: 192.168.10.10
   bootstrap_provisioning_prefix: 24
-  bootstrap_provisioning_gateway: 192.168.10.5
   bootstrap_dns_configuration: 192.168.0.254;1.1.1.1;1.0.0.1;
   ntp_server_configuration: 192.168.66.4
-  api_vip: 192.168.0.9
-  ingress_vip: 192.168.0.10
+  cluster_provisioning_nic: ens1
   baremetal:
     use_nmstate: true
     hosts:

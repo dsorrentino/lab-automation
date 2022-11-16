@@ -18,14 +18,22 @@ platform:
   baremetal:
     apiVIP: {{ install_config.api_vip }}
     ingressVIP: {{ install_config.ingress_vip }}
+{% if install_config.external bridge is defined %}
     externalBridge: {{ install_config.external_bridge }}
+{% endif %}
     bootstrapExternalStaticIP: {{ install_config.bootstrap_external_ip }}
     bootstrapExternalStaticGateway: {{ install_config.bootstrap_external_gateway }}
 {% if kni_use_provisioning_network %}
     bootstrapProvisioningIP: {{ install_config.bootstrap_provisioning_ip }}
+{% if install_config.provisioning_bridge is defined %}
     provisioningBridge: {{ install_config.provisioning_bridge }}
+{% endif %}
+{% if install_config.provisioning_network_cidr is defined %}
     provisioningNetworkCIDR: {{ install_config.provisioning_network_cidr }}
+{% endif %}
+{% if install_config.provisioning_dhcp_range is defined %}
     provisioningDHCPRange: {{ install_config.provisioning_dhcp_range }}
+{% endif %}
     provisioningNetworkInterface: {{ install_config.cluster_provisioning_nic }}
 {% else %}
     provisioningNetwork: "Disabled"

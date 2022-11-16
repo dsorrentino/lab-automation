@@ -1,5 +1,7 @@
-configure_networking: no
-advanced_networking: no
+configure_host:
+  boolean:
+    networking: no
+    advanced_networking: no
 network_config:
   interfaces:
     - { interface_name: eth0, bond_name: bond0 }
