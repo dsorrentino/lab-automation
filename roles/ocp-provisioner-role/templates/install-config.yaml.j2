@@ -18,7 +18,7 @@ platform:
   baremetal:
     apiVIP: {{ install_config.api_vip }}
     ingressVIP: {{ install_config.ingress_vip }}
-{% if install_config.external bridge is defined %}
+{% if install_config.external_bridge is defined %}
     externalBridge: {{ install_config.external_bridge }}
 {% endif %}
     bootstrapExternalStaticIP: {{ install_config.bootstrap_external_ip }}

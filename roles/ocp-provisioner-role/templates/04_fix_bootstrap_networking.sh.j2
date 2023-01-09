@@ -11,7 +11,9 @@ EXTERNAL_DNS="{{ install_config.bootstrap_dns_configuration }}"
 
 PROVISIONING_INTERFACE=ens4
 PROVISIONING_ADDRESS={{ install_config.bootstrap_provisioning_ip }}/{{ install_config.bootstrap_provisioning_prefix }}
+{% if install_config.bootstrap_provisioning_gateway is defined %}
 PROVISIONING_GATEWAY={{ install_config.bootstrap_provisioning_gateway }}
+{% endif %}
 
 PROVISIONING_CONFIG="[connection]
 id=${PROVISIONING_INTERFACE}
@@ -22,7 +24,9 @@ interface-name=${PROVISIONING_INTERFACE}
 
 [ipv4]
 address1=${PROVISIONING_ADDRESS}
+{% if install_config.bootstrap_provisioning_gateway is defined %}
 gateway=${PROVISIONING_GATEWAY}
+{% endif %}
 dns=${EXTERNAL_DNS}
 method=manual
 never-default=true
