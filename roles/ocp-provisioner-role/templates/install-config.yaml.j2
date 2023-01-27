@@ -16,8 +16,15 @@ controlPlane:
     baremetal: {}
 platform:
   baremetal:
+{% if ocp_version < 4.12 %}
     apiVIP: {{ install_config.api_vip }}
     ingressVIP: {{ install_config.ingress_vip }}
+{% else %}
+    apiVIPs:
+      - {{ install_config.api_vip }}
+    ingressVIPs:
+      - {{ install_config.ingress_vip }}
+{% endif %}
 {% if install_config.external_bridge is defined %}
     externalBridge: {{ install_config.external_bridge }}
 {% endif %}

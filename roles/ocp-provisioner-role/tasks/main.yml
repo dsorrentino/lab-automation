@@ -148,6 +148,9 @@
   slurp:
     src: /home/kni/.ssh/id_rsa.pub
   register: kni_pub_key
+- name: Get OCP version
+  set_fact:
+    ocp_version: "{{ kni_installer_version.split('-')|last }}"
 - name: Create base install-config.yaml
   template:
     src: install-config.yaml.j2
@@ -160,7 +163,7 @@
   loop:
     - initialconfigs
     - clusterconfigs
-- name: Configure vibvirtd
+- name: Configure libvirtd
   include_tasks: configure_libvirtd.yml
   when: configure_host.boolean.libvirt
 - name: Add http service to firewalld
