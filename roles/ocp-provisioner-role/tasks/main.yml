@@ -44,7 +44,15 @@
     - 05_create_cluster.sh
     - 99_destroy_cluster.sh
     - 99_clear_known_hosts.sh
-    - README.txt
+- name: Copy the README.txt file into place
+  copy:
+    src: "README.txt"
+    dest: /home/kni/README.txt
+    owner: kni
+    group: kni
+    mode: '0644'
+    backup: no
+    force: yes
 - name: Templatize some helper scripts to kni user
   template:
     src: "{{ item }}.j2"
