@@ -23,6 +23,7 @@ NOTE: When deploying the Bootstrap node in 4.11, it looks like the networking do
       correct  IP addresses set for the External and Provisioning networks.  Therefore, it is necessary to generate the iginition files and modify the 
       NIC configuration of the bootstrap node ignition file.  Testing in 4.12 showed that they fixed the NIC configuration issue, however it looked like
       DNS was not being properly configured.  The fix to bootstap networking below fixes both issues regardless of version.
+      See: https://bugzilla.redhat.com/show_bug.cgi?id=2048600
 
 01_get_openshift.sh - This script when executed will:
                         - Create a ~/binaries directory to store files
