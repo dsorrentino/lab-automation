@@ -59,6 +59,7 @@ Description: Contains deployment overrides that can be applied to the deployment
 
 The overrides directory has configuration files for:
 
+- Making the master nodes schedulable
 - Changing the NTP configuration of the Masters & Workers
 - Adding networking components to the master nodes and making them schedulable (if you don't want to deploy workers)
 

@@ -88,15 +88,18 @@
     mode: '0755'
     backup: no
     force: yes
-- name: Copy configure_networking_on_masters.sh script
+- name: Copy overrides scripts
   copy:
-    src: configure_networking_on_masters.sh
-    dest: /home/kni/{{ helper_scripts }}/overrides/configure_networking_on_masters.sh
+    src: "{{ item }}"
+    dest: /home/kni/{{ helper_scripts }}/overrides/{{ item }}
     owner: kni
     group: kni
     mode: '0755'
     backup: no
     force: yes
+  loop:
+    - configure_networking_on_masters.sh
+    - masters_schedulable.sh
 - name: Create YAML to configure networking components to run on masters
   copy:
     content: |
