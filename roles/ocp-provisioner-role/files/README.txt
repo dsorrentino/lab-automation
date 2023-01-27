@@ -54,6 +54,9 @@ NOTE: When deploying the Bootstrap node in 4.11, it looks like the networking do
 
 99_create_image_cache.sh - Script to utilize a local OS Image Cache. Should be run before creating the manifests as it updates install-config.yaml
 
+Directory:   helper_scripts/overrides
+Description: Contains deployment overrides that can be applied to the deployment manifests
+
 The overrides directory has configuration files for:
 
 - Changing the NTP configuration of the Masters & Workers
