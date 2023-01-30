@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+for SERVER_DATA in $(cat ~kni/{{ baremetal_tools }}/hardware.csv)
+do
+	HOST=$(echo ${SERVER_DATA} | awk -F, '{print $1}')
+	IPMI_ADDRESS=$(echo ${SERVER_DATA} | awk -F, '{print $2}')
+	IPMI_USER=$(echo ${SERVER_DATA} | awk -F, '{print $3}')
+	IPMI_PASSWORD=$(echo ${SERVER_DATA} | awk -F, '{print $4}')
+	echo -n "${HOST} (${IPMI_ADDRESS}): "
+    ipmitool -I lanplus -H ${IPMI_ADDRESS} -L ADMINISTRATOR -p 623 -U ${IPMI_USER} -P ${IPMI_PASSWORD} -R 1 -N 5 chassis bootdev pxe options=persistent
+done

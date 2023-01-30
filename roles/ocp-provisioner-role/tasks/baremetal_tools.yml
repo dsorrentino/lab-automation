@@ -26,3 +26,4 @@
     - power_status.sh
     - power_off.sh
     - power_on.sh
+    - set_boot_pxe.sh
